@@ -1,0 +1,122 @@
+08:51:19 ERROR]: --- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH - 1.21.4-518-db9de7d (MC: 1.21.4) ---
+[08:51:19 ERROR]: The server has not responded for 10 seconds! Creating thread dump
+[08:51:19 ERROR]: ------------------------------
+[08:51:19 ERROR]: Server thread dump (Look for plugins here before reporting to Leaf!):
+[08:51:19 ERROR]: ------------------------------
+[08:51:19 ERROR]: Current Thread: Server thread
+[08:51:19 ERROR]:       PID: 57 | Suspended: false | Native: false | State: RUNNABLE
+[08:51:19 ERROR]:       Stack:
+[08:51:19 ERROR]:               net.minecraft.world.level.levelgen.Heightmap.update(Heightmap.java:81)
+[08:51:19 ERROR]:               net.minecraft.world.level.chunk.LevelChunk.setBlockState(LevelChunk.java:468)
+[08:51:19 ERROR]:               net.minecraft.world.level.Level.setBlock(Level.java:1193)
+[08:51:19 ERROR]:               net.minecraft.world.level.Level.setBlock(Level.java:1153)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setTypeAndData(CraftBlock.java:312)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setTypeAndData(CraftBlock.java:291)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setBlockData(CraftBlock.java:287)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setType(CraftBlock.java:276)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setType(CraftBlock.java:269)
+[08:51:19 ERROR]:               SkyOrbs-2.0.0.jar//com.skyorbs.generation.GenerationManager.lambda$generatePlanetBlocks$1(GenerationManager.java:125)
+[08:51:19 ERROR]:               SkyOrbs-2.0.0.jar//com.skyorbs.generation.GenerationManager$$Lambda/0x0000019fad60ca98.run(Unknown Source)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[08:51:19 ERROR]:               org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[08:51:19 ERROR]:               net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1718)
+[08:51:19 ERROR]:               net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1577)
+[08:51:19 ERROR]:               net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1295)
+[08:51:19 ERROR]:               net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:300)
+[08:51:19 ERROR]:               net.minecraft.server.MinecraftServer$$Lambda/0x0000019fabe66868.run(Unknown Source)
+[08:51:19 ERROR]:               java.base@21.0.7/java.lang.Thread.runWith(Thread.java:1596)
+[08:51:19 ERROR]:               java.base@21.0.7/java.lang.Thread.run(Thread.java:1583)
+[08:51:19 ERROR]: ------------------------------
+[08:51:19 ERROR]: Parallel world ticking thread dump
+[08:51:19 ERROR]: ------------------------------
+[08:51:19 ERROR]: --- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH ---
+[08:51:19 ERROR]: ------------------------------
+[08:51:24 ERROR]: --- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH - 1.21.4-518-db9de7d (MC: 1.21.4) ---
+[08:51:24 ERROR]: The server has not responded for 15 seconds! Creating thread dump
+[08:51:24 ERROR]: ------------------------------
+[08:51:24 ERROR]: Server thread dump (Look for plugins here before reporting to Leaf!):
+[08:51:24 ERROR]: ------------------------------
+[08:51:24 ERROR]: Current Thread: Server thread
+[08:51:24 ERROR]:       PID: 57 | Suspended: false | Native: false | State: RUNNABLE
+[08:51:24 ERROR]:       Stack:
+[08:51:24 ERROR]:               ItemsAdder_4.0.13.jar//itemsadder.m.ji.d(SourceFile:634)
+[08:51:24 ERROR]:               java.base@21.0.7/java.lang.invoke.LambdaForm$DMH/0x0000019fab001000.invokeSpecial(LambdaForm$DMH)
+[08:51:24 ERROR]:               java.base@21.0.7/java.lang.invoke.LambdaForm$MH/0x0000019fad612400.invoke(LambdaForm$MH)
+[08:51:24 ERROR]:               java.base@21.0.7/java.lang.invoke.LambdaForm$MH/0x0000019fab121000.invokeExact_MT(LambdaForm$MH)
+[08:51:24 ERROR]:               io.papermc.paper.event.executor.MethodHandleEventExecutorTemplate/0x0000019fad12d800.execute(MethodHandleEventExecutorTemplate.java:46)
+[08:51:24 ERROR]:               org.bukkit.plugin.RegisteredListener.callEvent(RegisteredListener.java:70)
+[08:51:24 ERROR]:               io.papermc.paper.plugin.manager.PaperEventManager.callEvent(PaperEventManager.java:71)
+[08:51:24 ERROR]:               io.papermc.paper.plugin.manager.PaperPluginManagerImpl.callEvent(PaperPluginManagerImpl.java:131)
+[08:51:24 ERROR]:               org.bukkit.plugin.SimplePluginManager.callEvent(SimplePluginManager.java:629)
+[08:51:24 ERROR]:               net.minecraft.world.level.redstone.NeighborUpdater.executeUpdate(NeighborUpdater.java:56)
+[08:51:24 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater$MultiNeighborUpdate.runNext(CollectingNeighborUpdater.java:136)
+[08:51:24 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater.runUpdates(CollectingNeighborUpdater.java:79)
+[08:51:24 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater.addAndRun(CollectingNeighborUpdater.java:64)
+[08:51:24 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater.updateNeighborsAtExceptFromFacing(CollectingNeighborUpdater.java:46)
+[08:51:24 ERROR]:               net.minecraft.server.level.ServerLevel.updateNeighborsAt(ServerLevel.java:2007)
+[08:51:24 ERROR]:               net.minecraft.server.level.ServerLevel.updateNeighborsAt(ServerLevel.java:2001)
+[08:51:24 ERROR]:               net.minecraft.server.level.ServerLevel.blockUpdated(ServerLevel.java:2626)
+[08:51:24 ERROR]:               net.minecraft.world.level.Level.notifyAndUpdatePhysics(Level.java:1274)
+[08:51:24 ERROR]:               net.minecraft.world.level.Level.setBlock(Level.java:1246)
+[08:51:24 ERROR]:               net.minecraft.world.level.Level.setBlock(Level.java:1153)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setTypeAndData(CraftBlock.java:312)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setTypeAndData(CraftBlock.java:291)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setBlockData(CraftBlock.java:287)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setType(CraftBlock.java:276)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setType(CraftBlock.java:269)
+[08:51:24 ERROR]:               SkyOrbs-2.0.0.jar//com.skyorbs.generation.GenerationManager.lambda$generatePlanetBlocks$1(GenerationManager.java:125)
+[08:51:24 ERROR]:               SkyOrbs-2.0.0.jar//com.skyorbs.generation.GenerationManager$$Lambda/0x0000019fad60ca98.run(Unknown Source)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[08:51:24 ERROR]:               org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[08:51:24 ERROR]:               net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1718)
+[08:51:24 ERROR]:               net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1577)
+[08:51:24 ERROR]:               net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1295)
+[08:51:24 ERROR]:               net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:300)
+[08:51:24 ERROR]:               net.minecraft.server.MinecraftServer$$Lambda/0x0000019fabe66868.run(Unknown Source)
+[08:51:24 ERROR]:               java.base@21.0.7/java.lang.Thread.runWith(Thread.java:1596)
+[08:51:24 ERROR]:               java.base@21.0.7/java.lang.Thread.run(Thread.java:1583)
+[08:51:24 ERROR]: ------------------------------
+[08:51:24 ERROR]: Parallel world ticking thread dump
+[08:51:24 ERROR]: ------------------------------
+[08:51:24 ERROR]: --- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH ---
+[08:51:24 ERROR]: ------------------------------
+[08:51:29 ERROR]: --- DO NOT REPORT THIS TO PAPER - If you think this is a Leaf bug, please report it at https://github.com/Winds-Studio/Leaf/issues - THIS IS NOT A PAPER BUG OR CRASH - 1.21.4-518-db9de7d (MC: 1.21.4) ---
+[08:51:29 ERROR]: The server has not responded for 20 seconds! Creating thread dump
+[08:51:29 ERROR]: ------------------------------
+[08:51:29 ERROR]: Server thread dump (Look for plugins here before reporting to Leaf!):
+[08:51:29 ERROR]: ------------------------------
+[08:51:29 ERROR]: Current Thread: Server thread
+[08:51:29 ERROR]:       PID: 57 | Suspended: false | Native: false | State: RUNNABLE
+[08:51:29 ERROR]:       Stack:
+[08:51:29 ERROR]:               io.papermc.paper.plugin.manager.PaperEventManager.callEvent(PaperEventManager.java:39)
+[08:51:29 ERROR]:               io.papermc.paper.plugin.manager.PaperPluginManagerImpl.callEvent(PaperPluginManagerImpl.java:131)
+[08:51:29 ERROR]:               org.bukkit.plugin.SimplePluginManager.callEvent(SimplePluginManager.java:629)
+[08:51:29 ERROR]:               net.minecraft.world.level.redstone.NeighborUpdater.executeUpdate(NeighborUpdater.java:56)
+[08:51:29 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater$MultiNeighborUpdate.runNext(CollectingNeighborUpdater.java:136)
+[08:51:29 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater.runUpdates(CollectingNeighborUpdater.java:79)
+[08:51:29 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater.addAndRun(CollectingNeighborUpdater.java:64)
+[08:51:29 ERROR]:               net.minecraft.world.level.redstone.CollectingNeighborUpdater.updateNeighborsAtExceptFromFacing(CollectingNeighborUpdater.java:46)
+[08:51:29 ERROR]:               net.minecraft.server.level.ServerLevel.updateNeighborsAt(ServerLevel.java:2007)
+[08:51:29 ERROR]:               net.minecraft.server.level.ServerLevel.updateNeighborsAt(ServerLevel.java:2001)
+[08:51:29 ERROR]:               net.minecraft.server.level.ServerLevel.blockUpdated(ServerLevel.java:2626)
+[08:51:29 ERROR]:               net.minecraft.world.level.Level.notifyAndUpdatePhysics(Level.java:1274)
+[08:51:29 ERROR]:               net.minecraft.world.level.Level.setBlock(Level.java:1246)
+[08:51:29 ERROR]:               net.minecraft.world.level.Level.setBlock(Level.java:1153)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setTypeAndData(CraftBlock.java:312)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setTypeAndData(CraftBlock.java:291)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setBlockData(CraftBlock.java:287)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setType(CraftBlock.java:276)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.block.CraftBlock.setType(CraftBlock.java:269)
+[08:51:29 ERROR]:               SkyOrbs-2.0.0.jar//com.skyorbs.generation.GenerationManager.lambda$generatePlanetBlocks$1(GenerationManager.java:125)
+[08:51:29 ERROR]:               SkyOrbs-2.0.0.jar//com.skyorbs.generation.GenerationManager$$Lambda/0x0000019fad60ca98.run(Unknown Source)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[08:51:29 ERROR]:               org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[08:51:29 ERROR]:               net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1718)
+[08:51:29 ERROR]:               net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1577)
+[08:51:29 ERROR]:               net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1295)
+[08:51:29 ERROR]:               net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:300)
+[08:51:29 ERROR]:               net.minecraft.server.MinecraftServer$$Lambda/0x0000019fabe66868.run(Unknown Source)
+[08:51:29 ERROR]:               java.base@21.0.7/java.lang.Thread.runWith(Thread.java:1596)
+[08:51:29 ERROR]:               java.base@21.0.7/java.lang.Thread.run(Thread.java:1583)
+[08:51:29 ERROR]: ------------------------------
+[08:51:29 ERROR]: Parallel world ticking thread dump
