@@ -6,7 +6,12 @@ SkyOrbs is a Minecraft Paper plugin (version 1.21.4) that generates unique plane
 
 **Core Purpose:** Provide a skyblock-like experience where instead of traditional islands, players explore and inhabit procedurally generated planets with varied geometries, biome combinations, and orbital mechanics.
 
-**Current Status (Oct 17, 2025):** ✅ Version 2.0.0 Complete - Fully functional with all 17 shapes, 22 biomes, database persistence, and Turkish UI. JAR compiled and ready for deployment.
+**Current Status (Oct 17, 2025):** ✅ Version 2.0.1 Complete - Fully functional with all 17 shapes, 22 biomes, database persistence, and Turkish UI. 
+- **Fixed:** Server freeze during planet generation (batch block placement)
+- **Fixed:** Asteroids and satellites now generate with blocks
+- **Fixed:** Ores now spawn inside planets
+- **Fixed:** Auto-teleport after planet creation
+- JAR compiled and ready for deployment (14MB).
 
 ## User Preferences
 
