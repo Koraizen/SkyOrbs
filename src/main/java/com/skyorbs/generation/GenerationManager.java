@@ -6,9 +6,9 @@ import com.skyorbs.core.Orb;
 import com.skyorbs.features.*;
 import com.skyorbs.shapes.PlanetShape;
 import org.bukkit.*;
-import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.entity.Player;
 
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -32,23 +32,23 @@ public class GenerationManager {
         this.executor = Executors.newFixedThreadPool(plugin.getConfigManager().getThreadPoolCoreSize());
     }
     
-    public CompletableFuture<Orb> createPlanet(World world) {
-        return createPlanet(world, plugin.getConfigManager().generateRandomName());
+    public void createPlanetAsync(World world, Player player) {
+        createPlanetAsync(world, player, plugin.getConfigManager().generateRandomName());
     }
     
-    public CompletableFuture<Orb> createPlanet(World world, String name) {
-        CompletableFuture<Orb> future = new CompletableFuture<>();
+    public void createPlanetAsync(World world, Player player, String name) {
+        player.sendMessage("§eGezegen oluşturuluyor...");
         
         executor.submit(() -> {
             try {
                 List<Orb> existingOrbs = plugin.getDatabaseManager().getAllOrbs();
-                
                 int radius = sizeCalculator.calculateRadius("RANDOM");
-                
                 PlacementService.PlacementResult placement = placementService.findPlacement(radius, existingOrbs);
                 
                 if (!placement.isSuccess()) {
-                    future.completeExceptionally(new RuntimeException("Uygun yer bulunamadı!"));
+                    Bukkit.getScheduler().runTask(plugin, () -> 
+                        player.sendMessage("§cUygun yer bulunamadı!")
+                    );
                     return;
                 }
                 
@@ -79,33 +79,62 @@ public class GenerationManager {
                     null
                 );
                 
-                generatePlanetBlocks(world, orb, shape, biome);
-                
-                plugin.getDatabaseManager().saveOrb(orb);
-                
-                List<Orb> asteroids = asteroidGenerator.generateAsteroidsForPlanet(orb, world);
-                for (Orb asteroid : asteroids) {
-                    plugin.getDatabaseManager().saveOrb(asteroid);
-                }
-                
-                List<Orb> satellites = satelliteGenerator.generateSatellitesForPlanet(orb, world);
-                for (Orb satellite : satellites) {
-                    plugin.getDatabaseManager().saveOrb(satellite);
-                }
+                // Generate planet blocks in batches (async)
+                generatePlanetBlocksAsync(world, orb, shape, biome, () -> {
+                    // Generate asteroids
+                    try {
+                        List<Orb> asteroids = asteroidGenerator.generateAsteroidsForPlanet(orb, world);
+                        for (Orb asteroid : asteroids) {
+                            PlanetShape asteroidShape = plugin.getShapeRegistry().getShape(asteroid.getShapeName());
+                            BiomeType asteroidBiome = BiomeType.valueOf(asteroid.getBiomeName());
+                            generateOrbBlocksAsync(world, asteroid, asteroidShape, asteroidBiome, null);
+                            plugin.getDatabaseManager().saveOrb(asteroid);
+                        }
+                        
+                        // Generate satellites
+                        List<Orb> satellites = satelliteGenerator.generateSatellitesForPlanet(orb, world);
+                        for (Orb satellite : satellites) {
+                            PlanetShape satelliteShape = plugin.getShapeRegistry().getShape(satellite.getShapeName());
+                            BiomeType satelliteBiome = BiomeType.valueOf(satellite.getBiomeName());
+                            generateOrbBlocksAsync(world, satellite, satelliteShape, satelliteBiome, null);
+                            plugin.getDatabaseManager().saveOrb(satellite);
+                        }
+                        
+                        // Save main planet
+                        plugin.getDatabaseManager().saveOrb(orb);
+                        
+                        // Teleport player
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            Location loc = new Location(world, orb.getCenterX(), orb.getCenterY() + orb.getRadius() + 10, orb.getCenterZ());
+                            player.teleport(loc);
+                            
+                            String shapeName = plugin.getShapeRegistry().getShape(orb.getShapeName()).getDisplayName();
+                            player.sendMessage("§a§lGezegen Oluşturuldu!");
+                            player.sendMessage(String.format("§aGezegen: §e%s §7(%s, %s)", 
+                                orb.getName(), shapeName, orb.getBiomeName()
+                            ));
+                            player.sendMessage(String.format("§aKonum: §f%d, %d, %d §7| Yarıçap: §f%d", 
+                                orb.getCenterX(), orb.getCenterY(), orb.getCenterZ(), orb.getRadius()
+                            ));
+                        }, 40L);
+                        
+                    } catch (Exception e) {
+                        plugin.logError("Asteroid/satellite hatası", e);
+                    }
+                });
                 
                 placementService.releaseLocation(placement.getX(), placement.getZ());
                 
-                future.complete(orb);
-                
             } catch (Exception e) {
-                future.completeExceptionally(e);
+                plugin.logError("Gezegen oluşturma hatası", e);
+                Bukkit.getScheduler().runTask(plugin, () -> 
+                    player.sendMessage("§cHata: " + e.getMessage())
+                );
             }
         });
-        
-        return future;
     }
     
-    private void generatePlanetBlocks(World world, Orb orb, PlanetShape shape, BiomeType biome) {
+    private void generatePlanetBlocksAsync(World world, Orb orb, PlanetShape shape, BiomeType biome, Runnable callback) {
         int cx = orb.getCenterX();
         int cy = orb.getCenterY();
         int cz = orb.getCenterZ();
@@ -113,21 +142,80 @@ public class GenerationManager {
         long seed = orb.getSeed();
         Random random = new Random(seed);
         
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            for (int x = -radius; x <= radius; x++) {
-                for (int y = -radius; y <= radius; y++) {
-                    for (int z = -radius; z <= radius; z++) {
-                        if (shape.isBlockPart(x, y, z, radius, seed)) {
-                            double distance = Math.sqrt(x * x + y * y + z * z);
-                            int depth = (int)(radius - distance);
-                            
-                            Material material = biome.getMaterial(depth, random);
-                            world.getBlockAt(cx + x, cy + y, cz + z).setType(material);
-                        }
+        // Prepare blocks to place
+        List<BlockPlacement> blocks = new ArrayList<>();
+        
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    if (shape.isBlockPart(x, y, z, radius, seed)) {
+                        double distance = Math.sqrt(x * x + y * y + z * z);
+                        int depth = (int)(radius - distance);
+                        Material material = biome.getMaterial(depth, random);
+                        blocks.add(new BlockPlacement(cx + x, cy + y, cz + z, material));
                     }
                 }
             }
-        });
+        }
+        
+        // Add ores
+        List<OreGenerator.BlockData> ores = OreGenerator.generateOres(orb, biome, world);
+        for (OreGenerator.BlockData ore : ores) {
+            blocks.add(new BlockPlacement(ore.x, ore.y, ore.z, ore.material));
+        }
+        
+        // Place blocks in batches
+        placeBlocksInBatches(world, blocks, callback);
+    }
+    
+    private void generateOrbBlocksAsync(World world, Orb orb, PlanetShape shape, BiomeType biome, Runnable callback) {
+        int cx = orb.getCenterX();
+        int cy = orb.getCenterY();
+        int cz = orb.getCenterZ();
+        int radius = orb.getRadius();
+        long seed = orb.getSeed();
+        Random random = new Random(seed);
+        
+        List<BlockPlacement> blocks = new ArrayList<>();
+        
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    if (shape.isBlockPart(x, y, z, radius, seed)) {
+                        double distance = Math.sqrt(x * x + y * y + z * z);
+                        int depth = (int)(radius - distance);
+                        Material material = biome.getMaterial(depth, random);
+                        blocks.add(new BlockPlacement(cx + x, cy + y, cz + z, material));
+                    }
+                }
+            }
+        }
+        
+        placeBlocksInBatches(world, blocks, callback);
+    }
+    
+    private void placeBlocksInBatches(World world, List<BlockPlacement> blocks, Runnable callback) {
+        int batchSize = 500; // 500 blok per tick
+        int totalBatches = (blocks.size() + batchSize - 1) / batchSize;
+        
+        for (int i = 0; i < totalBatches; i++) {
+            int start = i * batchSize;
+            int end = Math.min(start + batchSize, blocks.size());
+            List<BlockPlacement> batch = blocks.subList(start, end);
+            
+            int delay = i; // 1 tick delay per batch
+            
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                for (BlockPlacement bp : batch) {
+                    world.getBlockAt(bp.x, bp.y, bp.z).setType(bp.material, false); // false = no physics update
+                }
+            }, delay);
+        }
+        
+        // Run callback after all batches complete
+        if (callback != null) {
+            Bukkit.getScheduler().runTaskLater(plugin, callback, totalBatches + 5);
+        }
     }
     
     public CompletableFuture<Void> deletePlanet(Orb orb) {
@@ -153,5 +241,17 @@ public class GenerationManager {
     
     public void shutdown() {
         executor.shutdown();
+    }
+    
+    private static class BlockPlacement {
+        int x, y, z;
+        Material material;
+        
+        BlockPlacement(int x, int y, int z, Material material) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.material = material;
+        }
     }
 }

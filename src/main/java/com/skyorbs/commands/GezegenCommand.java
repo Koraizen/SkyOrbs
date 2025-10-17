@@ -7,7 +7,6 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class GezegenCommand implements CommandExecutor, TabCompleter {
@@ -50,27 +49,7 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
         }
         
         World world = player.getWorld();
-        sender.sendMessage(plugin.getConfigManager().getMessage("generating"));
-        
-        plugin.getGenerationManager().createPlanet(world)
-            .thenAccept(orb -> {
-                sender.sendMessage(plugin.getConfigManager().getMessage("planetCreated"));
-                sender.sendMessage(String.format("§aGezegen: §e%s §7(%s, %s)", 
-                    orb.getName(),
-                    plugin.getShapeRegistry().getShape(orb.getShapeName()).getDisplayName(),
-                    orb.getBiomeName()
-                ));
-                sender.sendMessage(String.format("§aKonum: §f%d, %d, %d §7| Yarıçap: §f%d", 
-                    orb.getCenterX(), orb.getCenterY(), orb.getCenterZ(), orb.getRadius()
-                ));
-                
-                Location loc = new Location(world, orb.getCenterX(), orb.getCenterY() + orb.getRadius() + 10, orb.getCenterZ());
-                player.teleport(loc);
-            })
-            .exceptionally(e -> {
-                sender.sendMessage("§cHata: " + e.getMessage());
-                return null;
-            });
+        plugin.getGenerationManager().createPlanetAsync(world, player);
     }
     
     private void handleList(CommandSender sender) {
@@ -191,7 +170,7 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
             
             List<Orb> allOrbs = plugin.getDatabaseManager().getAllOrbs();
             
-            sender.sendMessage("§b═══ Gezegen Bilgileri ===");
+            sender.sendMessage("§b═══ Gezegen Bilgileri ═══");
             sender.sendMessage("§7İsim: §e" + orb.getName());
             sender.sendMessage("§7Şekil: §f" + plugin.getShapeRegistry().getShape(orb.getShapeName()).getDisplayName());
             sender.sendMessage("§7Biyom: §f" + orb.getBiomeName());
@@ -231,7 +210,7 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
     }
     
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage("§b═══ Gezegen Komutları ===");
+        sender.sendMessage("§b═══ Gezegen Komutları ═══");
         sender.sendMessage("§e/gezegen create §7- Yeni gezegen oluştur");
         sender.sendMessage("§e/gezegen list §7- Tüm gezegenleri listele");
         sender.sendMessage("§e/gezegen tp <isim> §7- Gezegene ışınlan");
