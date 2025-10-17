@@ -3,7 +3,7 @@ package com.skyorbs.core;
 import java.util.UUID;
 
 public class Orb {
-    
+
     private final UUID id;
     private final String name;
     private final String worldName;
@@ -17,6 +17,14 @@ public class Orb {
     private final long createdAt;
     private final boolean isAsteroid;
     private final UUID parentId;
+
+    // Dynamic Core System
+    private int coreLevel;
+    private double energyLevel;
+    private long xp;
+    private PlanetType planetType;
+    private int biosphereLevel;
+    private double ecologicalBalance;
     
     public Orb(UUID id, String name, String worldName, int centerX, int centerY, int centerZ,
                int radius, String shapeName, String biomeName, long seed, long createdAt,
@@ -34,6 +42,14 @@ public class Orb {
         this.createdAt = createdAt;
         this.isAsteroid = isAsteroid;
         this.parentId = parentId;
+
+        // Initialize dynamic core system
+        this.coreLevel = 1;
+        this.energyLevel = 100.0;
+        this.xp = 0;
+        this.planetType = PlanetType.TERRESTRIAL; // Default type
+        this.biosphereLevel = 1;
+        this.ecologicalBalance = 1.0;
     }
     
     public UUID getId() {
@@ -96,5 +112,78 @@ public class Orb {
     
     public double getDistanceFromSpawn() {
         return Math.sqrt(centerX * centerX + centerZ * centerZ);
+    }
+
+    // Dynamic Core System Getters and Setters
+    public int getCoreLevel() {
+        return coreLevel;
+    }
+
+    public void setCoreLevel(int coreLevel) {
+        this.coreLevel = Math.max(1, Math.min(10, coreLevel));
+    }
+
+    public double getEnergyLevel() {
+        return energyLevel;
+    }
+
+    public void setEnergyLevel(double energyLevel) {
+        this.energyLevel = Math.max(0.0, Math.min(100.0, energyLevel));
+    }
+
+    public long getXp() {
+        return xp;
+    }
+
+    public void addXp(long xp) {
+        this.xp += xp;
+        // Check for level up
+        int newLevel = calculateCoreLevelFromXp(this.xp);
+        if (newLevel > this.coreLevel) {
+            setCoreLevel(newLevel);
+        }
+    }
+
+    public PlanetType getPlanetType() {
+        return planetType;
+    }
+
+    public void setPlanetType(PlanetType planetType) {
+        this.planetType = planetType;
+    }
+
+    public int getBiosphereLevel() {
+        return biosphereLevel;
+    }
+
+    public void setBiosphereLevel(int biosphereLevel) {
+        this.biosphereLevel = Math.max(1, Math.min(5, biosphereLevel));
+    }
+
+    public double getEcologicalBalance() {
+        return ecologicalBalance;
+    }
+
+    public void setEcologicalBalance(double ecologicalBalance) {
+        this.ecologicalBalance = Math.max(0.0, Math.min(2.0, ecologicalBalance));
+    }
+
+    // Helper methods
+    private int calculateCoreLevelFromXp(long xp) {
+        // Level calculation: level = floor(sqrt(xp / 1000)) + 1
+        return (int) Math.floor(Math.sqrt(xp / 1000.0)) + 1;
+    }
+
+    public long getXpForNextLevel() {
+        int nextLevel = coreLevel + 1;
+        return (long) ((nextLevel - 1) * (nextLevel - 1) * 1000);
+    }
+
+    public double getEnergyRegenRate() {
+        return 0.1 * coreLevel; // Higher levels regenerate faster
+    }
+
+    public boolean canUpgrade() {
+        return xp >= getXpForNextLevel();
     }
 }

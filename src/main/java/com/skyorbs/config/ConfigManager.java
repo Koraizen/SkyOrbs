@@ -13,7 +13,10 @@ public class ConfigManager {
         this.plugin = plugin;
     }
     
-    // Gezegen boyut ayarları
+    // ============================================
+    // GEZEGEN BOYUT AYARLARI
+    // ============================================
+    
     public int getMinRadius() {
         return plugin.getConfig().getInt("generation.planetSize.minRadius", 80);
     }
@@ -26,7 +29,10 @@ public class ConfigManager {
         return plugin.getConfig().getInt("generation.planetSize.averageRadius", 150);
     }
     
-    // Yerleştirme ayarları
+    // ============================================
+    // YERLEŞTİRME AYARLARI
+    // ============================================
+    
     public int getMaxDistance() {
         return plugin.getConfig().getInt("placement.worldBounds.maxDistance", 3000);
     }
@@ -59,7 +65,10 @@ public class ConfigManager {
         return plugin.getConfig().getDouble("placement.attractToCenter.centerAttraction", 0.3);
     }
     
-    // Şekil ağırlıkları
+    // ============================================
+    // ŞEKİL AĞIRLIKLARI
+    // ============================================
+    
     public Map<String, Double> getShapeWeights() {
         Map<String, Double> weights = new HashMap<>();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("shapes.weights");
@@ -71,7 +80,10 @@ public class ConfigManager {
         return weights;
     }
     
-    // Asteroid ayarları
+    // ============================================
+    // ASTEROID AYARLARI
+    // ============================================
+    
     public boolean isAsteroidsEnabled() {
         return plugin.getConfig().getBoolean("asteroids.enabled", true);
     }
@@ -100,7 +112,10 @@ public class ConfigManager {
         return plugin.getConfig().getInt("asteroids.placement.maxDistanceFromPlanet", 800);
     }
     
-    // Uydu ayarları
+    // ============================================
+    // UYDU AYARLARI
+    // ============================================
+    
     public boolean isSatellitesEnabled() {
         return plugin.getConfig().getBoolean("satellites.enabled", true);
     }
@@ -117,7 +132,10 @@ public class ConfigManager {
         return plugin.getConfig().getDouble("satellites.perPlanet.probability", 0.6);
     }
     
-    // Performans ayarları
+    // ============================================
+    // PERFORMANS AYARLARI
+    // ============================================
+    
     public boolean isAsyncGenerationEnabled() {
         return plugin.getConfig().getBoolean("performance.asyncGeneration", true);
     }
@@ -131,14 +149,133 @@ public class ConfigManager {
     }
     
     public int getBlocksPerBatch() {
-        return plugin.getConfig().getInt("performance.batching.blocksPerBatch", 500);
+        return plugin.getConfig().getInt("performance.batching.blocksPerBatch", 250);
     }
     
     public int getBatchesPerTick() {
-        return plugin.getConfig().getInt("performance.batching.batchesPerTick", 5);
+        return plugin.getConfig().getInt("performance.batching.batchesPerTick", 1);
     }
     
-    // Limit ayarları
+    public int getShellThickness() {
+        return plugin.getConfig().getInt("performance.generation.shellThickness", 7);
+    }
+    
+    public boolean isChunkPreloadEnabled() {
+        return plugin.getConfig().getBoolean("performance.generation.chunkPreload", true);
+    }
+    
+    // ============================================
+    // ORE SİSTEMİ AYARLARI
+    // ============================================
+    
+    public boolean isOreGenerationEnabled() {
+        return plugin.getConfig().getBoolean("features.ores.enabled", true);
+    }
+    
+    public double getOreMultiplier() {
+        return plugin.getConfig().getDouble("features.ores.densityMultiplier", 1.0);
+    }
+    
+    public boolean isDeepslateEnabled() {
+        return plugin.getConfig().getBoolean("features.ores.deepslateVariants", true);
+    }
+    
+    public boolean areBiomeBonusesEnabled() {
+        return plugin.getConfig().getBoolean("features.ores.biomeBonuses", true);
+    }
+    
+    // ============================================
+    // AĞAÇ SİSTEMİ AYARLARI
+    // ============================================
+    
+    public boolean isTreeGenerationEnabled() {
+        return plugin.getConfig().getBoolean("features.trees.enabled", true);
+    }
+    
+    public double getTreeDensityMultiplier() {
+        return plugin.getConfig().getDouble("features.trees.densityMultiplier", 1.0);
+    }
+    
+    public boolean areTreeSpecialFeaturesEnabled() {
+        return plugin.getConfig().getBoolean("features.trees.specialFeatures", true);
+    }
+    
+    // ============================================
+    // YAPI SİSTEMİ AYARLARI
+    // ============================================
+    
+    public boolean isStructureGenerationEnabled() {
+        return plugin.getConfig().getBoolean("features.structures.enabled", true);
+    }
+    
+    public double getStructureDensityMultiplier() {
+        return plugin.getConfig().getDouble("features.structures.densityMultiplier", 1.0);
+    }
+    
+    public boolean areStructureChestsEnabled() {
+        return plugin.getConfig().getBoolean("features.structures.includeChests", true);
+    }
+    
+    // ============================================
+    // HAZİNE SİSTEMİ AYARLARI
+    // ============================================
+    
+    public boolean isTreasureGenerationEnabled() {
+        return plugin.getConfig().getBoolean("features.treasures.enabled", true);
+    }
+    
+    public double getTreasureDensityMultiplier() {
+        return plugin.getConfig().getDouble("features.treasures.densityMultiplier", 1.0);
+    }
+    
+    public double getLegendaryChanceMultiplier() {
+        return plugin.getConfig().getDouble("features.treasures.legendaryChanceMultiplier", 1.0);
+    }
+    
+    public boolean areBiomeSpecificTreasuresEnabled() {
+        return plugin.getConfig().getBoolean("features.treasures.biomeSpecific", true);
+    }
+    
+    // ============================================
+    // DEBUG AYARLARI
+    // ============================================
+    
+    public boolean isDebugEnabled() {
+        return plugin.getConfig().getBoolean("debug.enabled", false);
+    }
+    
+    public boolean isOreDebugEnabled() {
+        return plugin.getConfig().getBoolean("debug.oreGeneration.enabled", false);
+    }
+    
+    public boolean showOreCoordinates() {
+        return plugin.getConfig().getBoolean("debug.oreGeneration.showCoordinates", true);
+    }
+    
+    public boolean showVeinSize() {
+        return plugin.getConfig().getBoolean("debug.oreGeneration.showVeinSize", true);
+    }
+    
+    public boolean isTreeDebugEnabled() {
+        return plugin.getConfig().getBoolean("debug.treeGeneration.enabled", false);
+    }
+    
+    public boolean isStructureDebugEnabled() {
+        return plugin.getConfig().getBoolean("debug.structureGeneration.enabled", false);
+    }
+    
+    public boolean isPerformanceMonitorEnabled() {
+        return plugin.getConfig().getBoolean("debug.performanceMonitor.enabled", false);
+    }
+    
+    public int getPerformanceLogInterval() {
+        return plugin.getConfig().getInt("debug.performanceMonitor.logInterval", 100);
+    }
+    
+    // ============================================
+    // LİMİT AYARLARI
+    // ============================================
+    
     public int getPlanetsPerPlayer() {
         return plugin.getConfig().getInt("limits.planetsPerPlayer", 2);
     }
@@ -147,7 +284,66 @@ public class ConfigManager {
         return plugin.getConfig().getBoolean("limits.deleteOwnPlanet", false);
     }
     
-    // Rastgele isim oluşturma
+    public int getMaxPlanetsPerWorld() {
+        return plugin.getConfig().getInt("limits.maxPlanetsPerWorld", 100);
+    }
+    
+    public long getGenerationCooldown() {
+        return plugin.getConfig().getLong("limits.generationCooldown", 300);
+    }
+    
+    // ============================================
+    // DÜNYA YÖNETİMİ
+    // ============================================
+    
+    public boolean isAutoSaveEnabled() {
+        return plugin.getConfig().getBoolean("worldManagement.autoSave.enabled", true);
+    }
+    
+    public int getAutoSaveInterval() {
+        return plugin.getConfig().getInt("worldManagement.autoSave.interval", 600);
+    }
+    
+    public boolean isChunkUnloadOptimization() {
+        return plugin.getConfig().getBoolean("worldManagement.chunkUnload.enabled", true);
+    }
+    
+    public int getChunkUnloadDelay() {
+        return plugin.getConfig().getInt("worldManagement.chunkUnload.delay", 200);
+    }
+    
+    // ============================================
+    // ENTEGRASYONLAR
+    // ============================================
+    
+    public boolean isVaultEnabled() {
+        return plugin.getConfig().getBoolean("integrations.vault.enabled", false);
+    }
+    
+    public double getPlanetCreationCost() {
+        return plugin.getConfig().getDouble("integrations.vault.planetCreationCost", 1000.0);
+    }
+    
+    public boolean isWorldGuardEnabled() {
+        return plugin.getConfig().getBoolean("integrations.worldguard.enabled", false);
+    }
+    
+    public boolean isPlaceholderAPIEnabled() {
+        return plugin.getConfig().getBoolean("integrations.placeholderapi.enabled", false);
+    }
+    
+    public boolean isDynmapEnabled() {
+        return plugin.getConfig().getBoolean("integrations.dynmap.enabled", false);
+    }
+    
+    public boolean showPlanetsOnDynmap() {
+        return plugin.getConfig().getBoolean("integrations.dynmap.showPlanets", true);
+    }
+    
+    // ============================================
+    // RASTGELE İSİM OLUŞTURMA
+    // ============================================
+    
     public String generateRandomName() {
         List<String> prefixes = plugin.getConfig().getStringList("planetNames.prefixes");
         List<String> suffixes = plugin.getConfig().getStringList("planetNames.suffixes");
@@ -180,7 +376,10 @@ public class ConfigManager {
         return name;
     }
     
-    // Mesaj sistemi
+    // ============================================
+    // MESAJ SİSTEMİ
+    // ============================================
+    
     public String getMessage(String key) {
         String prefix = plugin.getConfig().getString("messages.prefix", "&8[&bGezegen&8]&r");
         String message = plugin.getConfig().getString("messages." + key, key);
@@ -193,5 +392,59 @@ public class ConfigManager {
     
     private String colorize(String text) {
         return text.replace("&", "§");
+    }
+    
+    // ============================================
+    // YARDIMCI METODLAR
+    // ============================================
+    
+    /**
+     * Debug mesajı gönder
+     */
+    public void sendDebugMessage(String category, String message) {
+        if (!isDebugEnabled()) return;
+        
+        boolean categoryEnabled = switch (category.toLowerCase()) {
+            case "ore" -> isOreDebugEnabled();
+            case "tree" -> isTreeDebugEnabled();
+            case "structure" -> isStructureDebugEnabled();
+            case "performance" -> isPerformanceMonitorEnabled();
+            default -> false;
+        };
+        
+        if (categoryEnabled) {
+            plugin.logInfo("[DEBUG:" + category.toUpperCase() + "] " + message);
+        }
+    }
+    
+    /**
+     * Tüm feature'ları kontrol et
+     */
+    public boolean areAllFeaturesEnabled() {
+        return isOreGenerationEnabled() && 
+               isTreeGenerationEnabled() && 
+               isStructureGenerationEnabled() && 
+               isTreasureGenerationEnabled();
+    }
+    
+    /**
+     * Config'i validate et
+     */
+    public void validateConfig() {
+        if (getMinRadius() >= getMaxRadius()) {
+            plugin.logWarning("minRadius >= maxRadius! Varsayılan değerler kullanılıyor.");
+        }
+        
+        if (getBlocksPerBatch() > 1000) {
+            plugin.logWarning("blocksPerBatch çok yüksek! Performans sorunları olabilir.");
+        }
+        
+        if (getThreadPoolCoreSize() > 16) {
+            plugin.logWarning("threadPoolCoreSize çok yüksek! CPU kullanımı artabilir.");
+        }
+        
+        if (getShellThickness() < 3 || getShellThickness() > 15) {
+            plugin.logWarning("shellThickness ideal değerlerin dışında (3-15).");
+        }
     }
 }

@@ -1,754 +1,495 @@
-# ═══════════════════════════════════════════════════════════════
-#  SkyOrbs 2.0.0 - Ultra Detaylı Konfigürasyon Dosyası
-#  Türkçe Minecraft Gezegen Oluşturma Eklentisi
-# ═══════════════════════════════════════════════════════════════
-#
-#  Bu dosyadaki TÜM ayarlar oyun içi değiştirilebilir.
-#  /gezegen reload komutuyla değişiklikleri yükleyin.
-#
-# ═══════════════════════════════════════════════════════════════
+# ============================================
+# SkyOrbs 2.0.0 - Türkçe Gezegen Sistemi
+# ============================================
 
-# ───────────────────────────────────────────────────────────────
-# GEZEGEN BOYUT AYARLARI
-# ───────────────────────────────────────────────────────────────
+# Gezegen Üretim Ayarları
 generation:
   planetSize:
-    minRadius: 80              # Minimum gezegen yarıçapı (blok)
-    maxRadius: 250             # Maximum gezegen yarıçapı (blok)
-    averageRadius: 150         # Ortalama hedef yarıçap
+    minRadius: 25          # Minimum gezegen yarıçapı (çok küçük - hızlı)
+    maxRadius: 50          # Maximum gezegen yarıçapı (çok küçük - hızlı)
+    averageRadius: 35      # Ortalama gezegen boyutu (çok küçük - hızlı)
     
-    # Boyut dağılımı (toplam 1.0 olmalı)
-    distribution:
-      small: 0.4               # %40 - Küçük gezegenler (80-120)
-      medium: 0.4              # %40 - Orta gezegenler (120-180)
-      large: 0.2               # %20 - Büyük gezegenler (180-250)
-    
-    # Gezegen kabuğu kalınlığı
-    shellThickness:
-      min: 5                   # Minimum kabuk kalınlığı
-      max: 10                  # Maximum kabuk kalınlığı
-      average: 7               # Ortalama kabuk kalınlığı
+    # Boyut kategorileri (opsiyonel)
+    small: 80-120
+    medium: 120-180
+    large: 180-250
 
-# ───────────────────────────────────────────────────────────────
-# GEZEGEN YERLEŞTİRME AYARLARI
-# ───────────────────────────────────────────────────────────────
+# Gezegen Yerleştirme
 placement:
-  strategy: "cluster_based"    # Yerleştirme stratejisi
-  
-  # Dünya sınırları
   worldBounds:
-    maxDistance: 3000          # Spawn'dan maksimum uzaklık
-    centerX: 0                 # Merkez X koordinatı
-    centerZ: 0                 # Merkez Z koordinatı
-    minDistanceFromSpawn: 1000 # Spawn'dan minimum uzaklık
+    centerX: 0                    # Dünya merkez X
+    centerZ: 0                    # Dünya merkez Z
+    maxDistance: 5000             # Spawn'dan maksimum uzaklık (artırıldı)
+    minDistanceFromSpawn: 1500    # Spawn'dan minimum uzaklık (artırıldı)
   
-  # Gezegenler arası mesafe
   clustering:
-    enabled: true              # Kümeleme aktif mi?
-    clusterMinDistance: 800    # Gezegenler arası minimum mesafe
-    clusterMaxDistance: 2000   # Gezegenler arası maximum mesafe
-    
-    # Spiral yerleştirme (fallback)
-    spiral:
-      enabled: true
-      maxRadius: 3000
-      ringStep: 200            # Her halka arası mesafe
-      angleStep: 15            # Açı adımı (derece)
+    enabled: true                 # Gezegenleri kümeleme
+    clusterMinDistance: 2000      # Kümede minimum mesafe (çok artırıldı)
+    clusterMaxDistance: 4000      # Kümede maksimum mesafe (çok artırıldı)
   
-  # Merkeze çekim
   attractToCenter:
-    enabled: true
-    centerAttraction: 0.3      # %30 merkeze doğru çekim (0.0-1.0)
+    centerAttraction: 0.3         # Merkeze çekim kuvveti (0.0-1.0)
 
-# ───────────────────────────────────────────────────────────────
-# GEZEGEN ŞEKİLLERİ VE AĞIRLIKLAR
-# ───────────────────────────────────────────────────────────────
+# Gezegen Şekilleri ve Ağırlıkları
 shapes:
-  # Her şeklin rastgele seçilme ağırlığı (yüksek = daha sık)
   weights:
-    SPHERE: 15.0               # Standart küre
-    BLOB: 12.0                 # Ameba şekli
-    ASTEROID: 10.0             # Düzensiz kaya
-    ELLIPSOID: 8.0             # Elips
-    TORUS: 5.0                 # Çörek şekli
-    RING: 4.0                  # Düz disk
-    CYLINDER: 6.0              # Silindir
-    CONE: 5.0                  # Koni
-    DIAMOND: 7.0               # Elmas
-    CUBE: 6.0                  # Küp
-    PYRAMID: 7.0               # Piramit
-    OCTAHEDRON: 6.0            # Sekiz yüzlü
-    FRACTAL: 8.0               # Fraktal şekil
-    SPIKY: 9.0                 # Dikenli
-    COMET: 4.0                 # Kuyruklu yıldız
-    CRESCENT: 5.0              # Hilal
-    HYBRID: 10.0               # Karma şekil
-  
-  # Her şekil için özel parametreler
-  parameters:
-    BLOB:
-      noiseFrequency: 0.15     # Noise sıklığı
-      deformationIntensity: 0.3 # Deformasyon şiddeti
-    
-    ASTEROID:
-      roughness: 0.5           # Pürüzlülük
-      cratersEnabled: true     # Kraterler aktif mi?
-      craterDensity: 0.2       # Krater yoğunluğu
-    
-    TORUS:
-      majorRadius: 0.7         # Ana yarıçap çarpanı
-      minorRadius: 0.3         # Küçük yarıçap çarpanı
-    
-    RING:
-      thickness: 3             # Halka kalınlığı (blok)
-    
-    FRACTAL:
-      iterations: 3            # Fraktal iterasyon sayısı
-      scaleFactor: 0.5         # Ölçek faktörü
-    
-    SPIKY:
-      spikeCount: 12           # Diken sayısı
-      spikeLength: 0.4         # Diken uzunluğu çarpanı
+    # Basic shapes (10)
+    SPHERE: 8.0         # Küre
+    HEMISPHERE: 15.0    # Yarım Küre
+    BLOB: 12.0          # Ameba
+    ELLIPSOID: 10.0     # Elips
+    ASTEROID: 8.0       # Asteroid
+    TORUS: 6.0          # Çörek
+    RING: 3.0           # Halka
+    CYLINDER: 5.0       # Silindir
+    CONE: 7.0           # Koni
+    DIAMOND: 6.0        # Elmas
 
-# ───────────────────────────────────────────────────────────────
-# BİYOM SİSTEMİ
-# ───────────────────────────────────────────────────────────────
-biomes:
-  # Biyom dağılımı (ağırlıklı)
-  weights:
-    # Dünya benzeri (%30)
-    FOREST: 6.0
-    PLAINS: 6.0
-    JUNGLE: 5.0
-    SAVANNA: 4.0
-    TAIGA: 5.0
-    MEADOW: 4.0
-    
-    # Çöl benzeri (%20)
-    DESERT: 7.0
-    BADLANDS: 7.0
-    CANYON: 6.0
-    
-    # Donmuş (%15)
-    FROZEN_TUNDRA: 5.0
-    ICE_SPIKES: 5.0
-    GLACIER: 5.0
-    
-    # Volkanik (%15)
-    LAVA_OCEAN: 5.0
-    OBSIDIAN_PLAINS: 5.0
-    MAGMA_CAVES: 5.0
-    
-    # Uzaylı/Egzotik (%20)
-    CRYSTAL_FOREST: 3.0
-    VOID: 2.0
-    CORRUPTED: 2.0
-    MUSHROOM_GIANT: 4.0
-    TOXIC_SWAMP: 3.0
-    GLOWSTONE_CAVERN: 3.0
-    CHORUS_LAND: 3.0
+    # Advanced shapes (10)
+    CUBE: 4.0           # Küp
+    PYRAMID: 3.0        # Piramit
+    OCTAHEDRON: 2.0     # Sekizyüzlü
+    FRACTAL: 2.0        # Fraktal
+    SPIKY: 1.5          # Dikenli
+    COMET: 1.0          # Kuyruklu yıldız
+    CRESCENT: 1.0       # Hilal
+    HYBRID: 0.5         # Karma
 
-# ───────────────────────────────────────────────────────────────
-# ASTEROİD SİSTEMİ
-# ───────────────────────────────────────────────────────────────
+    # Diverse shapes (10 more)
+    LAYERED: 4.0        # Katmanlı
+    ASTEROID_FIELD: 2.0 # Asteroid alanı
+    CRATERED: 3.0       # Kraterli
+    HONEYCOMB: 2.0      # Bal peteği
+    SPIRAL: 1.5         # Spiral
+    WAVE: 2.5           # Dalgalı
+    CRYSTAL: 3.0        # Kristal
+    ORGANIC: 4.0        # Organik
+    GEOMETRIC: 2.0      # Geometrik
+    NEBULA: 1.0         # Nebula
+
+# Asteroid Sistemi
 asteroids:
-  enabled: true                # Asteroid sistemi aktif mi?
-  
+  enabled: true
   perPlanet:
-    minCount: 1                # Gezegen başına min asteroid
-    maxCount: 5                # Gezegen başına max asteroid
-  
+    minCount: 1               # Gezegen başına minimum asteroid
+    maxCount: 5               # Gezegen başına maksimum asteroid
   size:
-    minRadius: 20              # Min asteroid boyutu
-    maxRadius: 50              # Max asteroid boyutu
-  
+    minRadius: 20             # Minimum asteroid boyutu
+    maxRadius: 50             # Maksimum asteroid boyutu
   placement:
-    minDistanceFromPlanet: 300 # Gezegenden min mesafe
-    maxDistanceFromPlanet: 800 # Gezegenden max mesafe
+    minDistanceFromPlanet: 300
+    maxDistanceFromPlanet: 800
 
-# ───────────────────────────────────────────────────────────────
-# UYDU SİSTEMİ
-# ───────────────────────────────────────────────────────────────
+# Uydu Sistemi
 satellites:
-  enabled: true                # Uydu sistemi aktif mi?
-  
+  enabled: true
   perPlanet:
-    minCount: 0                # Gezegen başına min uydu
-    maxCount: 3                # Gezegen başına max uydu
-    probability: 0.6           # Uydu oluşma olasılığı
-  
+    minCount: 0               # Gezegen başına minimum uydu
+    maxCount: 3               # Gezegen başına maksimum uydu
+    probability: 0.6          # Uydu olma olasılığı (60%)
   size:
-    minRadius: 30              # Min uydu boyutu
-    maxRadius: 70              # Max uydu boyutu
-  
-  placement:
-    minDistanceFromPlanet: 150 # Gezegenden min mesafe
-    maxDistanceFromPlanet: 400 # Gezegenden max mesafe
+    minRadius: 30
+    maxRadius: 70
+  ring_chance: 0.2            # Halka olma olasılığı (20%)
 
-# ───────────────────────────────────────────────────────────────
-# ÖZELLİK OLUŞTURMA (Ore, Ağaç, Yapı)
-# ───────────────────────────────────────────────────────────────
-features:
-  ores:
+# Planet Modifiers (for 2000+ combinations)
+modifiers:
+  enabled: true
+  hollow:
     enabled: true
-    density: 0.05              # Ore yoğunluğu (0.0-1.0)
-  
+    probability: 0.4              # 40% chance for hollow planets
+    shellThickness: 5             # Shell thickness in blocks
+    tunnelCount: 3                # Number of interior tunnels
+    structureTemplates:           # Civilization feeling structures
+      - "ruins_small"
+      - "lab_fragment"
+      - "alien_base_remnant"
+      - "ancient_temple"
+
+  oreRich:
+    enabled: true
+    probability: 0.3              # 30% chance for ore-rich planets
+    multiplier: 2.0               # 2x ore density
+
+  magmaCore:
+    enabled: true
+    probability: 0.2              # 20% chance for magma core
+    coreRadius: 0.2               # Core is 20% of planet radius
+
+  icyCore:
+    enabled: true
+    probability: 0.15             # 15% chance for icy core
+
+  antiGravity:
+    enabled: true
+    probability: 0.1              # 10% chance for anti-gravity zones
+
+# Atmospheres (8 types)
+atmospheres:
+  enabled: true
+  clear:
+    probability: 0.4
+    effects: []
+    particles: []
+    fog: false
+    glow: false
+
+  luminous:
+    probability: 0.2
+    effects:
+      - effect: NIGHT_VISION
+        amplifier: 0
+        duration: 100
+    particles: END_ROD
+    fog: false
+    glow: true
+
+  toxic:
+    probability: 0.15
+    effects:
+      - effect: POISON
+        amplifier: 1
+        duration: 80
+      - effect: SLOWNESS
+        amplifier: 0
+        duration: 100
+    particles: DRIP_LAVA
+    fog: true
+    glow: false
+
+  stormy:
+    probability: 0.1
+    effects:
+      - effect: SLOWNESS
+        amplifier: 1
+        duration: 60
+    particles: CLOUD
+    fog: true
+    glow: false
+
+  foggy:
+    probability: 0.08
+    effects:
+      - effect: BLINDNESS
+        amplifier: 0
+        duration: 40
+    particles: SUSPENDED_DEPTH
+    fog: true
+    glow: false
+
+  corrosive:
+    probability: 0.05
+    effects:
+      - effect: WITHER
+        amplifier: 0
+        duration: 60
+      - effect: POISON
+        amplifier: 2
+        duration: 100
+    particles: PORTAL
+    fog: true
+    glow: false
+
+  aurora:
+    probability: 0.03
+    effects:
+      - effect: REGENERATION
+        amplifier: 0
+        duration: 120
+    particles: END_ROD
+    fog: false
+    glow: true
+
+# Flora Themes (10 types)
+floraThemes:
+  enabled: true
   trees:
-    enabled: true
-    densityMultiplier: 1.0     # Ağaç yoğunluğu çarpanı
-  
-  structures:
-    enabled: true
-    rarity: 40                 # Her X birimde 1 yapı
-  
-  treasures:
-    enabled: true
-    rarity: 50                 # Her X birimde 1 hazine
+    probability: 0.4
+    density: 0.25
+  fungi:
+    probability: 0.2
+    density: 0.3
+  crystals:
+    probability: 0.15
+    density: 0.2
+  vines:
+    probability: 0.1
+    density: 0.35
+  moss:
+    probability: 0.08
+    density: 0.4
+  luminous_plants:
+    probability: 0.05
+    density: 0.15
+  coral:
+    probability: 0.03
+    density: 0.1
+  flowers:
+    probability: 0.02
+    density: 0.5
+  cacti:
+    probability: 0.01
+    density: 0.05
+  exotic:
+    probability: 0.005
+    density: 0.08
 
-# ───────────────────────────────────────────────────────────────
-# PERFORMANS AYARLARI
-# ───────────────────────────────────────────────────────────────
+# Structure Themes (12 types)
+structureThemes:
+  enabled: true
+  ruins:
+    probability: 0.25
+    templates: ["ruins_small", "ruins_large", "temple_ruins"]
+  temple:
+    probability: 0.15
+    templates: ["alien_temple", "crystal_temple", "void_temple"]
+  alien_base:
+    probability: 0.1
+    templates: ["alien_lab", "alien_habitat", "alien_defense"]
+  lab:
+    probability: 0.08
+    templates: ["research_lab", "bio_lab", "tech_lab"]
+  crashed_ship:
+    probability: 0.05
+    templates: ["small_ship", "medium_ship", "large_ship"]
+  fortress:
+    probability: 0.03
+    templates: ["volcanic_fortress", "ice_fortress", "crystal_fortress"]
+  spire:
+    probability: 0.02
+    templates: ["crystal_spire", "obsidian_spire", "ice_spire"]
+  dungeon:
+    probability: 0.01
+    templates: ["deep_dungeon", "ancient_dungeon", "cursed_dungeon"]
+  village:
+    probability: 0.005
+    templates: ["alien_village", "crystal_village", "fungal_village"]
+  portal:
+    probability: 0.003
+    templates: ["nether_portal", "end_portal", "void_portal"]
+  monolith:
+    probability: 0.002
+    templates: ["ancient_monolith", "crystal_monolith", "energy_monolith"]
+  citadel:
+    probability: 0.001
+    templates: ["floating_citadel", "underground_citadel", "sky_citadel"]
+
+# Satellites/Rings/Asteroids (8 types)
+satelliteSystems:
+  enabled: true
+  none:
+    probability: 0.3
+  moon:
+    probability: 0.25
+    count: [1, 1]
+    materials: [STONE, ANDESITE, DIORITE]
+  debris:
+    probability: 0.15
+    count: [3, 8]
+    materials: [COBBLESTONE, GRAVEL, DIRT]
+  asteroids:
+    probability: 0.12
+    count: [2, 5]
+    materials: [STONE, COBBLESTONE, ANDESITE]
+  ringed:
+    probability: 0.08
+    count: [8, 15]
+    materials: [STONE, COBBLESTONE, GRAVEL]
+  twin_moons:
+    probability: 0.05
+    count: [2, 2]
+    materials: [STONE, ANDESITE, GRANITE]
+  mini_moon:
+    probability: 0.03
+    count: [1, 1]
+    materials: [GLOWSTONE, SEA_LANTERN, SHROOMLIGHT]
+  planetary_system:
+    probability: 0.02
+    count: [3, 7]
+    materials: [STONE, GLOWSTONE, OBSIDIAN, DIAMOND_BLOCK]
+
+# Performans Optimizasyonu
 performance:
-  asyncGeneration: true        # Asenkron üretim
-  
+  asyncGeneration: true             # Asenkron üretim
+
   threadPool:
-    coreSize: 4                # Temel thread sayısı
-    maxSize: 8                 # Maksimum thread sayısı
-  
+    coreSize: 8                     # Thread havuzu boyutu (2x artırıldı)
+    maxSize: 16                     # Maksimum thread sayısı (2x artırıldı)
+
   batching:
-    blocksPerBatch: 500        # Batch başına blok sayısı
-    batchesPerTick: 5          # Tick başına batch sayısı
-  
-  queueSize: 20                # Maksimum queue boyutu
+    blocksPerBatch: 1000            # Batch başına blok sayısı (4x artırıldı - çok hızlı)
+    batchesPerTick: 4               # Tick başına batch sayısı (4x artırıldı - çok hızlı)
 
-# ───────────────────────────────────────────────────────────────
-# OYUNCU LİMİTLERİ
-# ───────────────────────────────────────────────────────────────
+  generation:
+    shellThickness: 0                # Artık kullanılmıyor - tam dolu üretim
+    chunkPreload: true              # Chunk'ları önceden yükle
+  
+  worldManagement:
+    autoSave:
+      enabled: true
+      interval: 600                 # Saniye (10 dakika)
+    
+    chunkUnload:
+      enabled: true                 # Chunk unload optimizasyonu
+      delay: 200                    # Tick (10 saniye)
+
+# Progress Display
+progress_display:
+  type: bossbar                     # bossbar, actionbar, or chat
+  update_interval: 500              # ms between updates
+
+# Teleportation
+teleport:
+  safe_teleport: true               # Enable safe teleportation checks
+  avoid_dangerous_blocks: true      # Avoid lava, fire, etc.
+
+# Hollow Planets
+hollow:
+  enabled: true                     # Enable hollow planet generation
+  probability: 0.4                  # Chance of generating hollow planets (0.0-1.0)
+  shell_thickness: 5                # Thickness of hollow planet shell
+  interior_structures: true         # Generate civilization structures inside
+  tunnels: true                     # Generate connecting tunnels
+
+# Debug Modu
+debug:
+  enabled: false                    # Ana debug modu
+
+  oreGeneration:
+    enabled: false                  # Ore debug
+    showCoordinates: true           # Koordinatları göster
+    showVeinSize: true              # Vein boyutunu göster
+
+  treeGeneration:
+    enabled: false                  # Ağaç debug
+    showTreeType: true
+
+  structureGeneration:
+    enabled: false                  # Yapı debug
+    showStructureType: true
+
+  performanceMonitor:
+    enabled: false                  # Performans monitörü
+    logInterval: 100                # Log aralığı (tick)
+
+# Limitler
 limits:
-  planetsPerPlayer: 2          # Oyuncu başına max gezegen
-  deleteOwnPlanet: false       # Oyuncu kendi gezegenini silebilir mi?
-  requirePermission: true      # İzin gerekli mi?
+  planetsPerPlayer: 5               # Oyuncu başına gezegen limiti (artırıldı)
+  maxPlanetsPerWorld: 200           # Dünya başına maksimum gezegen (artırıldı)
+  deleteOwnPlanet: true             # Kendi gezegenini silebilir mi (etkinleştirildi)
+  generationCooldown: 60            # Gezegen oluşturma cooldown (saniye - azaltıldı)
 
-# ───────────────────────────────────────────────────────────────
-# MESAJLAR (Tamamen Türkçe)
-# ───────────────────────────────────────────────────────────────
-messages:
-  prefix: "&8[&bGezegen&8]&r"
+# Entegrasyonlar
+integrations:
+  vault:
+    enabled: false                  # Vault ekonomi sistemi
+    planetCreationCost: 1000.0      # Gezegen oluşturma maliyeti
   
-  # Genel mesajlar
-  noPermission: "&cBu komutu kullanma yetkiniz yok!"
-  playerOnly: "&cBu komut sadece oyuncular tarafından kullanılabilir!"
-  configReloaded: "&aKonfigürasyon başarıyla yeniden yüklendi!"
+  worldguard:
+    enabled: false                  # WorldGuard koruması
+    autoProtectPlanets: true        # Gezegenleri otomatik koru
   
-  # Gezegen oluşturma
-  generating: "&eGezegen oluşturuluyor, lütfen bekleyin..."
-  planetCreated: "&aGezegen başarıyla oluşturuldu!"
-  planetFailed: "&cGezegen oluşturulamadı: {error}"
-  maxPlanetsReached: "&cMaksimum gezegen limitine ulaştınız! ({limit} gezegen)"
-  noSpaceAvailable: "&cUygun alan bulunamadı! Tüm alan dolu."
+  placeholderapi:
+    enabled: false                  # PlaceholderAPI
+    # Placeholders:
+    # %skyorbs_planets% - Toplam gezegen sayısı
+    # %skyorbs_player_planets% - Oyuncunun gezegen sayısı
   
-  # Gezegen bilgi
-  planetNotFound: "&cGezegen bulunamadı: &e{name}"
-  teleported: "&aGezegen &e{name}&a'a ışınlandınız!"
-  
-  # Liste
-  listHeader: "&b═══ Gezegenler ({count} adet) ═══"
-  listEntry: "&e{name} &7- &f{shape} &7| &f{x}, {y}, {z}"
-  listEmpty: "&eHenüz hiç gezegen oluşturulmamış."
-  
-  # Silme
-  planetDeleted: "&aGezegen &e{name}&a başarıyla silindi!"
-  cannotDeleteOwn: "&cKendi gezegeni nizi silemezsiniz! Admin'den yardım isteyin."
-  deleteConfirm: "&eGezegen &c{name}&e'i silmek istediğinizden emin misiniz? &7(/gezegen sil-onayla {name})"
-  
-  # Bilgi ekranı
-  infoHeader: "&b═══ Gezegen Bilgileri ═══"
-  infoName: "&7İsim: &e{name}"
-  infoShape: "&7Şekil: &f{shape}"
-  infoBiome: "&7Biyom: &f{biome}"
-  infoRadius: "&7Yarıçap: &f{radius} blok"
-  infoCenter: "&7Merkez: &f{x}, {y}, {z}"
-  infoWorld: "&7Dünya: &f{world}"
-  infoCreated: "&7Oluşturma: &f{date}"
-  infoNearby: "&7Yakındaki gezegenler:"
-  infoNearbyEntry: "&8  • &e{name} &7- &f{distance} blok uzakta"
+  dynmap:
+    enabled: false                  # Dynmap entegrasyonu
+    showPlanets: true               # Gezegenleri haritada göster
+    markerIcon: "world"             # Marker ikonu
 
-# ───────────────────────────────────────────────────────────────
-# RASTGELE GEZEGEN İSİMLERİ (1000+ İsim Havuzu)
-# ───────────────────────────────────────────────────────────────
-# Türkçe ve bilim kurgu karışımı isimler
-# Her seferinde rastgele birleşimler oluşturulacak
+# Gezegen İsimleri
 planetNames:
-  # Önek havuzu (200 adet)
   prefixes:
-    - "Zyr"
-    - "Kry"
-    - "Vel"
-    - "Xan"
-    - "Thal"
-    - "Nex"
-    - "Vor"
-    - "Aether"
-    - "Lumi"
-    - "Nyx"
-    - "Ori"
-    - "Zel"
-    - "Kep"
-    - "Dra"
-    - "Pho"
-    - "Sol"
-    - "Lun"
-    - "Stel"
-    - "Cos"
-    - "Ast"
-    - "Gal"
-    - "Neb"
-    - "Pul"
-    - "Qua"
-    - "Mag"
-    - "Ion"
-    - "Ply"
-    - "Erg"
-    - "Zen"
-    - "Var"
-    - "Kra"
-    - "Bly"
-    - "Cyn"
-    - "Dex"
-    - "Fen"
-    - "Glo"
-    - "Hex"
-    - "Jax"
-    - "Kyl"
-    - "Lyr"
-    - "Myr"
-    - "Nyl"
-    - "Pyx"
-    - "Rex"
-    - "Syx"
-    - "Tyx"
-    - "Vyx"
-    - "Wyx"
-    - "Zyx"
-    - "Alp"
-    - "Bet"
-    - "Gam"
-    - "Del"
-    - "Eps"
-    - "Zet"
-    - "Eta"
-    - "The"
-    - "Iot"
-    - "Kap"
-    - "Lam"
-    - "Om"
-    - "Sig"
-    - "Tau"
-    - "Phi"
-    - "Chi"
-    - "Psi"
-    - "Ome"
-    - "Arc"
-    - "Bor"
-    - "Cel"
-    - "Dor"
-    - "Elys"
-    - "Flux"
-    - "Grav"
-    - "Hel"
-    - "Inf"
-    - "Jov"
-    - "Kal"
-    - "Lex"
-    - "Mor"
-    - "Nov"
-    - "Oxy"
-    - "Par"
-    - "Qal"
-    - "Rad"
-    - "Syn"
-    - "Ter"
-    - "Ultr"
-    - "Vox"
-    - "Warp"
-    - "Xer"
-    - "Ygg"
-    - "Zon"
-    - "Apex"
-    - "Blade"
-    - "Core"
-    - "Dawn"
+    - "Nova"
+    - "Stella"
+    - "Astro"
+    - "Celest"
+    - "Nebu"
+    - "Galax"
+    - "Cosmo"
+    - "Meteor"
+    - "Lunar"
+    - "Solar"
+    - "Void"
     - "Echo"
-    - "Fade"
-    - "Gale"
-    - "Haze"
-    - "Iris"
-    - "Jade"
-    - "Kraken"
-    - "Lotus"
-    - "Mist"
-    - "Nexus"
-    - "Onyx"
-    - "Pearl"
-    - "Quantum"
-    - "Raven"
-    - "Shadow"
-    - "Titan"
-    - "Umbra"
-    - "Vortex"
-    - "Wyrm"
-    - "Xenon"
-    - "Yonder"
     - "Zenith"
-    - "Akasha"
-    - "Boreas"
-    - "Caelum"
-    - "Draco"
-    - "Eurus"
-    - "Fafnir"
-    - "Gaian"
-    - "Hydra"
-    - "Icarus"
-    - "Jotun"
-    - "Krono"
-    - "Levia"
-    - "Midgar"
-    - "Nifl"
-    - "Odin"
-    - "Proxima"
-    - "Quasar"
-    - "Ragnar"
-    - "Sirius"
-    - "Thule"
-    - "Utgard"
-    - "Valhall"
-    - "Woden"
-    - "Xerxes"
-    - "Ymir"
-    - "Zodiac"
-    - "Altair"
-    - "Betel"
-    - "Canop"
-    - "Deneb"
-    - "Erida"
-    - "Fornax"
-    - "Gemini"
-    - "Hydrus"
-    - "Indus"
-    - "Kepler"
-    - "Lyrae"
-    - "Musca"
-    - "Norma"
-    - "Orion"
-    - "Pavon"
-    - "Rigel"
-    - "Scutum"
-    - "Tauri"
-    - "Ursa"
-    - "Vega"
-    - "Wilhe"
-    - "Xaldin"
-    - "Yeager"
-    - "Zephyr"
-    - "Acheron"
-    - "Bifrost"
-    - "Cymbal"
-    - "Delphi"
-    - "Elara"
-    - "Fenris"
-    - "Galvan"
-    - "Helion"
-    - "Ixion"
-    - "Janus"
-    - "Kharon"
-    - "Lazarus"
-    - "Mimas"
-    - "Nereid"
-    - "Oberon"
-    - "Proteus"
-    - "Quaoar"
-    - "Rhea"
-    - "Sedna"
-    - "Triton"
-    - "Umbriel"
-    - "Varda"
-    - "Weywot"
+    - "Quantum"
+    - "Ethereal"
   
-  # Sonrak havuzu (200 adet)
   suffixes:
-    - "ion"
-    - "ara"
-    - "eon"
-    - "ius"
-    - "onis"
-    - "axis"
-    - "or"
-    - "is"
-    - "os"
-    - "us"
-    - "on"
-    - "ar"
-    - "el"
-    - "an"
-    - "en"
-    - "ix"
-    - "ox"
-    - "ex"
-    - "ax"
-    - "ux"
-    - "yx"
-    - "ath"
-    - "eth"
-    - "ith"
-    - "oth"
-    - "uth"
-    - "ria"
-    - "lia"
-    - "sia"
-    - "tia"
-    - "nia"
-    - "kor"
-    - "lor"
-    - "mor"
-    - "nor"
-    - "por"
-    - "rex"
-    - "lex"
-    - "dex"
-    - "pex"
-    - "vex"
+    - "prime"
+    - "minor"
+    - "major"
+    - "core"
     - "rim"
-    - "lim"
-    - "vim"
-    - "nim"
-    - "pim"
-    - "ron"
-    - "lon"
-    - "mon"
-    - "ton"
-    - "von"
-    - "ral"
-    - "tal"
-    - "val"
-    - "nal"
-    - "mal"
-    - "ros"
-    - "los"
-    - "mos"
-    - "nos"
-    - "pos"
-    - "rus"
-    - "lus"
-    - "mus"
-    - "nus"
-    - "pus"
-    - "rion"
-    - "lion"
-    - "mion"
-    - "tion"
-    - "vion"
-    - "rax"
-    - "lax"
-    - "max"
-    - "nax"
-    - "pax"
-    - "ria"
-    - "lia"
-    - "mia"
-    - "nia"
-    - "pia"
-    - "sor"
-    - "tor"
-    - "vor"
-    - "wor"
-    - "xor"
-    - "sia"
-    - "tia"
-    - "via"
-    - "wia"
-    - "xia"
-    - "ran"
-    - "lan"
-    - "man"
-    - "nan"
-    - "pan"
-    - "ren"
-    - "len"
-    - "men"
-    - "nen"
-    - "pen"
-    - "rin"
-    - "lin"
-    - "min"
-    - "nin"
-    - "pin"
-    - "ron"
-    - "lon"
-    - "mon"
-    - "non"
-    - "pon"
-    - "run"
-    - "lun"
-    - "mun"
-    - "nun"
-    - "pun"
-    - "ryn"
-    - "lyn"
-    - "myn"
-    - "nyn"
-    - "pyn"
-    - "thor"
-    - "dor"
-    - "gor"
-    - "kor"
-    - "thor"
-    - "thar"
-    - "dar"
-    - "gar"
-    - "kar"
-    - "thar"
-    - "thir"
-    - "dir"
-    - "gir"
-    - "kir"
-    - "thir"
-    - "thor"
-    - "dor"
-    - "gor"
-    - "kor"
-    - "thor"
-    - "thur"
-    - "dur"
-    - "gur"
-    - "kur"
-    - "thur"
-    - "drax"
-    - "grax"
-    - "krax"
-    - "trax"
-    - "prax"
-    - "drix"
-    - "grix"
-    - "krix"
-    - "trix"
-    - "prix"
-    - "drox"
-    - "grox"
-    - "krox"
-    - "trox"
-    - "prox"
-    - "drux"
-    - "grux"
-    - "krux"
-    - "trux"
-    - "prux"
-    - "dryx"
-    - "gryx"
-    - "kryx"
-    - "tryx"
-    - "pryx"
-    - "shan"
-    - "chan"
-    - "khan"
-    - "than"
-    - "phan"
-    - "shen"
-    - "chen"
-    - "khen"
-    - "then"
-    - "phen"
-    - "shin"
-    - "chin"
-    - "khin"
-    - "thin"
-    - "phin"
-    - "shon"
-    - "chon"
-    - "khon"
-    - "thon"
-    - "phon"
-    - "shun"
-    - "chun"
-    - "khun"
-    - "thun"
-    - "phun"
-    - "valos"
-    - "talos"
-    - "kalos"
-    - "malos"
-    - "nalos"
-    - "velos"
-    - "telos"
-    - "kelos"
-    - "melos"
-    - "nelos"
+    - "sphere"
+    - "world"
+    - "star"
+    - "moon"
+    - "rock"
+    - "drift"
+    - "haven"
+    - "nexus"
+    - "forge"
+    - "sanctum"
   
-  # Takı ekleri (50 adet)
   postfixes:
-    - "Prime"
     - "Alpha"
     - "Beta"
     - "Gamma"
     - "Delta"
     - "Omega"
-    - "Nova"
-    - "IX"
-    - "X"
-    - "VII"
-    - "XII"
-    - "V"
-    - "III"
-    - "Ultima"
-    - "Maxima"
-    - "Minima"
-    - "Major"
-    - "Minor"
-    - "Superior"
-    - "Inferior"
-    - "Primus"
+    - "Prime"
     - "Secundus"
     - "Tertius"
-    - "Quintus"
-    - "Zero"
-    - "One"
-    - "Two"
-    - "Core"
-    - "Edge"
-    - "Rim"
-    - "Hub"
-    - "Nexus"
-    - "Apex"
-    - "Zenith"
-    - "Nadir"
-    - "Centris"
-    - "Australis"
-    - "Borealis"
-    - "Occidentis"
-    - "Orientis"
-    - "Obscura"
-    - "Luminosa"
-    - "Tenebris"
-    - "Radiata"
-    - "Crystallis"
-    - "Metallica"
-    - "Glacialis"
-    - "Volcanus"
-    - "Aquaticus"
-    - "Desertus"
   
-  # İsim formatı (rastgele seçilir)
-  # {prefix}{suffix} = "Zyron"
-  # {prefix}{suffix}-{postfix} = "Thalos-Prime"
-  # {prefix}{suffix} {number} = "Velara 7"
-  # {prefix} {postfix} = "Nyx Omega"
   formats:
-    - "{prefix}{suffix}"
-    - "{prefix}{suffix}-{postfix}"
-    - "{prefix}{suffix} {number}"
+    - "{prefix}-{suffix}"
+    - "{prefix} {suffix}"
+    - "{prefix}-{number}"
     - "{prefix} {postfix}"
-    - "{prefix}{suffix}-{number}"
+    - "{suffix}-{number}"
   
-  # Rastgele sayı aralığı
   numberRange:
     min: 1
     max: 999
+
+# Mesajlar
+messages:
+  prefix: "&8[&bGezegen&8]&r"
+  
+  # Komut mesajları
+  noPermission: "&cBu komutu kullanma yetkiniz yok!"
+  playerOnly: "&cBu komut sadece oyuncular tarafından kullanılabilir!"
+  configReloaded: "&aKonfigürasyon yeniden yüklendi!"
+  
+  # Gezegen oluşturma
+  planetCreating: "&eGezegen oluşturuluyor..."
+  planetCreated: "&a&lGezegen Oluşturuldu!"
+  planetCreationFailed: "&cGezegen oluşturulamadı: {reason}"
+  noSuitableLocation: "&cUygun konum bulunamadı!"
+  
+  # Gezegen listesi
+  listHeader: "&b&l=== Gezegenler ({count}) ==="
+  listEmpty: "&7Henüz gezegen oluşturulmamış."
+  
+  # Gezegen bilgi
+  planetNotFound: "&cGezegen bulunamadı: {name}"
+  
+  # Teleport
+  teleported: "&aGezegene ışınlandınız: &e{name}"
+  
+  # Silme
+  planetDeleting: "&eGezegen siliniyor..."
+  planetDeleted: "&aGezegen silindi: &e{name}"
+  
+  # Limitler
+  planetLimitReached: "&cGezegen limitine ulaştınız! (Limit: {limit})"
+  cooldownActive: "&cGezegen oluşturmak için {time} saniye beklemelisiniz!"
+  
+  # Ekonomi
+  insufficientFunds: "&cYetersiz para! Gerekli: {cost}"
+  economyCharged: "&a{cost} para çekildi."

@@ -10,7 +10,9 @@ public class ShapeRegistry {
     private final Random random = new Random();
     
     public void registerAllShapes() {
+        // Basic shapes (10)
         register(new SphereShape());
+        register(new HemisphereShape());
         register(new BlobShape());
         register(new AsteroidShape());
         register(new EllipsoidShape());
@@ -19,6 +21,8 @@ public class ShapeRegistry {
         register(new CylinderShape());
         register(new ConeShape());
         register(new DiamondShape());
+
+        // Advanced shapes (8)
         register(new CubeShape());
         register(new PyramidShape());
         register(new OctahedronShape());

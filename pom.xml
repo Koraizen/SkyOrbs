@@ -12,6 +12,17 @@
     <name>SkyOrbs</name>
     <description>Türkçe Minecraft gezegen oluşturma eklentisi - 15+ şekil, 30+ biyom, asteroid sistemi</description>
 
+    <url>https://atlasoyuncu.com</url>
+
+    <developers>
+        <developer>
+            <name>Koraizen</name>
+            <email>koraizen@atlasoyuncu.com</email>
+            <organization>AtlasOyuncu</organization>
+            <organizationUrl>https://atlasoyuncu.com</organizationUrl>
+        </developer>
+    </developers>
+
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -46,6 +57,22 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
+        </dependency>
+
+        <!-- JUnit Jupiter for testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito for mocking -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.6.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

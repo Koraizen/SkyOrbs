@@ -103,17 +103,62 @@ public class PlacementService {
     }
     
     private boolean checkOverlap(int x, int z, int newRadius, List<Orb> existingOrbs) {
+        // İlk olarak diğer gezegenlerle çakışma kontrolü
         for (Orb orb : existingOrbs) {
             double distance = orb.getDistanceFrom(x, z);
-            int safeDistance = orb.getRadius() + newRadius + 250;
-            
+            int safeDistance = orb.getRadius() + newRadius + 800; // DAHA FAZLA MESAFE - 800 blok güvenli mesafe
+
             if (distance < safeDistance) {
                 return true;
             }
         }
-        
+
+        // Rezerve edilmiş konum kontrolü
         String key = x + "," + z;
-        return reservedLocations.contains(key);
+        if (reservedLocations.contains(key)) {
+            return true;
+        }
+
+        // BLOK KONTROLÜ - Oluşacak yerde blok varsa oluşmasın
+        return hasBlocksAtLocation(x, z, newRadius);
+    }
+
+    /**
+     * Belirtilen konumda blok olup olmadığını kontrol eder
+     */
+    private boolean hasBlocksAtLocation(int x, int z, int radius) {
+        // Gezegen oluşacak alanda örnekleme yap
+        int samplePoints = Math.min(10, radius / 5 + 1); // Radius'a göre örnek sayısı
+        int step = Math.max(1, radius / samplePoints);
+
+        for (int dx = -radius; dx <= radius; dx += step) {
+            for (int dz = -radius; dz <= radius; dz += step) {
+                double distance = Math.sqrt(dx * dx + dz * dz);
+                if (distance <= radius) {
+                    // Bu konumda blok kontrolü yap
+                    int checkX = x + dx;
+                    int checkZ = z + dz;
+
+                    // Yükseklik aralığında kontrol et (yeryüzü seviyesinde)
+                    for (int y = 50; y <= 150; y += 10) { // 50-150 arası 10'ar blok kontrol
+                        // World instance'ı plugin'den al
+                        if (plugin.getServer().getWorlds().size() > 0) {
+                            var world = plugin.getServer().getWorlds().get(0); // Ana dünya
+                            if (world != null) {
+                                var block = world.getBlockAt(checkX, y, checkZ);
+                                var type = block.getType();
+                                // Hava veya su dışında blok varsa çakışma var
+                                if (!type.isAir() && type != org.bukkit.Material.WATER && type != org.bukkit.Material.LAVA) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false; // Blok bulunamadı, güvenli
     }
     
     public void reserveLocation(int x, int z) {
