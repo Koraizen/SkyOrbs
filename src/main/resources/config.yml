@@ -1,0 +1,754 @@
+# ═══════════════════════════════════════════════════════════════
+#  SkyOrbs 2.0.0 - Ultra Detaylı Konfigürasyon Dosyası
+#  Türkçe Minecraft Gezegen Oluşturma Eklentisi
+# ═══════════════════════════════════════════════════════════════
+#
+#  Bu dosyadaki TÜM ayarlar oyun içi değiştirilebilir.
+#  /gezegen reload komutuyla değişiklikleri yükleyin.
+#
+# ═══════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────
+# GEZEGEN BOYUT AYARLARI
+# ───────────────────────────────────────────────────────────────
+generation:
+  planetSize:
+    minRadius: 80              # Minimum gezegen yarıçapı (blok)
+    maxRadius: 250             # Maximum gezegen yarıçapı (blok)
+    averageRadius: 150         # Ortalama hedef yarıçap
+    
+    # Boyut dağılımı (toplam 1.0 olmalı)
+    distribution:
+      small: 0.4               # %40 - Küçük gezegenler (80-120)
+      medium: 0.4              # %40 - Orta gezegenler (120-180)
+      large: 0.2               # %20 - Büyük gezegenler (180-250)
+    
+    # Gezegen kabuğu kalınlığı
+    shellThickness:
+      min: 5                   # Minimum kabuk kalınlığı
+      max: 10                  # Maximum kabuk kalınlığı
+      average: 7               # Ortalama kabuk kalınlığı
+
+# ───────────────────────────────────────────────────────────────
+# GEZEGEN YERLEŞTİRME AYARLARI
+# ───────────────────────────────────────────────────────────────
+placement:
+  strategy: "cluster_based"    # Yerleştirme stratejisi
+  
+  # Dünya sınırları
+  worldBounds:
+    maxDistance: 3000          # Spawn'dan maksimum uzaklık
+    centerX: 0                 # Merkez X koordinatı
+    centerZ: 0                 # Merkez Z koordinatı
+    minDistanceFromSpawn: 1000 # Spawn'dan minimum uzaklık
+  
+  # Gezegenler arası mesafe
+  clustering:
+    enabled: true              # Kümeleme aktif mi?
+    clusterMinDistance: 800    # Gezegenler arası minimum mesafe
+    clusterMaxDistance: 2000   # Gezegenler arası maximum mesafe
+    
+    # Spiral yerleştirme (fallback)
+    spiral:
+      enabled: true
+      maxRadius: 3000
+      ringStep: 200            # Her halka arası mesafe
+      angleStep: 15            # Açı adımı (derece)
+  
+  # Merkeze çekim
+  attractToCenter:
+    enabled: true
+    centerAttraction: 0.3      # %30 merkeze doğru çekim (0.0-1.0)
+
+# ───────────────────────────────────────────────────────────────
+# GEZEGEN ŞEKİLLERİ VE AĞIRLIKLAR
+# ───────────────────────────────────────────────────────────────
+shapes:
+  # Her şeklin rastgele seçilme ağırlığı (yüksek = daha sık)
+  weights:
+    SPHERE: 15.0               # Standart küre
+    BLOB: 12.0                 # Ameba şekli
+    ASTEROID: 10.0             # Düzensiz kaya
+    ELLIPSOID: 8.0             # Elips
+    TORUS: 5.0                 # Çörek şekli
+    RING: 4.0                  # Düz disk
+    CYLINDER: 6.0              # Silindir
+    CONE: 5.0                  # Koni
+    DIAMOND: 7.0               # Elmas
+    CUBE: 6.0                  # Küp
+    PYRAMID: 7.0               # Piramit
+    OCTAHEDRON: 6.0            # Sekiz yüzlü
+    FRACTAL: 8.0               # Fraktal şekil
+    SPIKY: 9.0                 # Dikenli
+    COMET: 4.0                 # Kuyruklu yıldız
+    CRESCENT: 5.0              # Hilal
+    HYBRID: 10.0               # Karma şekil
+  
+  # Her şekil için özel parametreler
+  parameters:
+    BLOB:
+      noiseFrequency: 0.15     # Noise sıklığı
+      deformationIntensity: 0.3 # Deformasyon şiddeti
+    
+    ASTEROID:
+      roughness: 0.5           # Pürüzlülük
+      cratersEnabled: true     # Kraterler aktif mi?
+      craterDensity: 0.2       # Krater yoğunluğu
+    
+    TORUS:
+      majorRadius: 0.7         # Ana yarıçap çarpanı
+      minorRadius: 0.3         # Küçük yarıçap çarpanı
+    
+    RING:
+      thickness: 3             # Halka kalınlığı (blok)
+    
+    FRACTAL:
+      iterations: 3            # Fraktal iterasyon sayısı
+      scaleFactor: 0.5         # Ölçek faktörü
+    
+    SPIKY:
+      spikeCount: 12           # Diken sayısı
+      spikeLength: 0.4         # Diken uzunluğu çarpanı
+
+# ───────────────────────────────────────────────────────────────
+# BİYOM SİSTEMİ
+# ───────────────────────────────────────────────────────────────
+biomes:
+  # Biyom dağılımı (ağırlıklı)
+  weights:
+    # Dünya benzeri (%30)
+    FOREST: 6.0
+    PLAINS: 6.0
+    JUNGLE: 5.0
+    SAVANNA: 4.0
+    TAIGA: 5.0
+    MEADOW: 4.0
+    
+    # Çöl benzeri (%20)
+    DESERT: 7.0
+    BADLANDS: 7.0
+    CANYON: 6.0
+    
+    # Donmuş (%15)
+    FROZEN_TUNDRA: 5.0
+    ICE_SPIKES: 5.0
+    GLACIER: 5.0
+    
+    # Volkanik (%15)
+    LAVA_OCEAN: 5.0
+    OBSIDIAN_PLAINS: 5.0
+    MAGMA_CAVES: 5.0
+    
+    # Uzaylı/Egzotik (%20)
+    CRYSTAL_FOREST: 3.0
+    VOID: 2.0
+    CORRUPTED: 2.0
+    MUSHROOM_GIANT: 4.0
+    TOXIC_SWAMP: 3.0
+    GLOWSTONE_CAVERN: 3.0
+    CHORUS_LAND: 3.0
+
+# ───────────────────────────────────────────────────────────────
+# ASTEROİD SİSTEMİ
+# ───────────────────────────────────────────────────────────────
+asteroids:
+  enabled: true                # Asteroid sistemi aktif mi?
+  
+  perPlanet:
+    minCount: 1                # Gezegen başına min asteroid
+    maxCount: 5                # Gezegen başına max asteroid
+  
+  size:
+    minRadius: 20              # Min asteroid boyutu
+    maxRadius: 50              # Max asteroid boyutu
+  
+  placement:
+    minDistanceFromPlanet: 300 # Gezegenden min mesafe
+    maxDistanceFromPlanet: 800 # Gezegenden max mesafe
+
+# ───────────────────────────────────────────────────────────────
+# UYDU SİSTEMİ
+# ───────────────────────────────────────────────────────────────
+satellites:
+  enabled: true                # Uydu sistemi aktif mi?
+  
+  perPlanet:
+    minCount: 0                # Gezegen başına min uydu
+    maxCount: 3                # Gezegen başına max uydu
+    probability: 0.6           # Uydu oluşma olasılığı
+  
+  size:
+    minRadius: 30              # Min uydu boyutu
+    maxRadius: 70              # Max uydu boyutu
+  
+  placement:
+    minDistanceFromPlanet: 150 # Gezegenden min mesafe
+    maxDistanceFromPlanet: 400 # Gezegenden max mesafe
+
+# ───────────────────────────────────────────────────────────────
+# ÖZELLİK OLUŞTURMA (Ore, Ağaç, Yapı)
+# ───────────────────────────────────────────────────────────────
+features:
+  ores:
+    enabled: true
+    density: 0.05              # Ore yoğunluğu (0.0-1.0)
+  
+  trees:
+    enabled: true
+    densityMultiplier: 1.0     # Ağaç yoğunluğu çarpanı
+  
+  structures:
+    enabled: true
+    rarity: 40                 # Her X birimde 1 yapı
+  
+  treasures:
+    enabled: true
+    rarity: 50                 # Her X birimde 1 hazine
+
+# ───────────────────────────────────────────────────────────────
+# PERFORMANS AYARLARI
+# ───────────────────────────────────────────────────────────────
+performance:
+  asyncGeneration: true        # Asenkron üretim
+  
+  threadPool:
+    coreSize: 4                # Temel thread sayısı
+    maxSize: 8                 # Maksimum thread sayısı
+  
+  batching:
+    blocksPerBatch: 500        # Batch başına blok sayısı
+    batchesPerTick: 5          # Tick başına batch sayısı
+  
+  queueSize: 20                # Maksimum queue boyutu
+
+# ───────────────────────────────────────────────────────────────
+# OYUNCU LİMİTLERİ
+# ───────────────────────────────────────────────────────────────
+limits:
+  planetsPerPlayer: 2          # Oyuncu başına max gezegen
+  deleteOwnPlanet: false       # Oyuncu kendi gezegenini silebilir mi?
+  requirePermission: true      # İzin gerekli mi?
+
+# ───────────────────────────────────────────────────────────────
+# MESAJLAR (Tamamen Türkçe)
+# ───────────────────────────────────────────────────────────────
+messages:
+  prefix: "&8[&bGezegen&8]&r"
+  
+  # Genel mesajlar
+  noPermission: "&cBu komutu kullanma yetkiniz yok!"
+  playerOnly: "&cBu komut sadece oyuncular tarafından kullanılabilir!"
+  configReloaded: "&aKonfigürasyon başarıyla yeniden yüklendi!"
+  
+  # Gezegen oluşturma
+  generating: "&eGezegen oluşturuluyor, lütfen bekleyin..."
+  planetCreated: "&aGezegen başarıyla oluşturuldu!"
+  planetFailed: "&cGezegen oluşturulamadı: {error}"
+  maxPlanetsReached: "&cMaksimum gezegen limitine ulaştınız! ({limit} gezegen)"
+  noSpaceAvailable: "&cUygun alan bulunamadı! Tüm alan dolu."
+  
+  # Gezegen bilgi
+  planetNotFound: "&cGezegen bulunamadı: &e{name}"
+  teleported: "&aGezegen &e{name}&a'a ışınlandınız!"
+  
+  # Liste
+  listHeader: "&b═══ Gezegenler ({count} adet) ═══"
+  listEntry: "&e{name} &7- &f{shape} &7| &f{x}, {y}, {z}"
+  listEmpty: "&eHenüz hiç gezegen oluşturulmamış."
+  
+  # Silme
+  planetDeleted: "&aGezegen &e{name}&a başarıyla silindi!"
+  cannotDeleteOwn: "&cKendi gezegeni nizi silemezsiniz! Admin'den yardım isteyin."
+  deleteConfirm: "&eGezegen &c{name}&e'i silmek istediğinizden emin misiniz? &7(/gezegen sil-onayla {name})"
+  
+  # Bilgi ekranı
+  infoHeader: "&b═══ Gezegen Bilgileri ═══"
+  infoName: "&7İsim: &e{name}"
+  infoShape: "&7Şekil: &f{shape}"
+  infoBiome: "&7Biyom: &f{biome}"
+  infoRadius: "&7Yarıçap: &f{radius} blok"
+  infoCenter: "&7Merkez: &f{x}, {y}, {z}"
+  infoWorld: "&7Dünya: &f{world}"
+  infoCreated: "&7Oluşturma: &f{date}"
+  infoNearby: "&7Yakındaki gezegenler:"
+  infoNearbyEntry: "&8  • &e{name} &7- &f{distance} blok uzakta"
+
+# ───────────────────────────────────────────────────────────────
+# RASTGELE GEZEGEN İSİMLERİ (1000+ İsim Havuzu)
+# ───────────────────────────────────────────────────────────────
+# Türkçe ve bilim kurgu karışımı isimler
+# Her seferinde rastgele birleşimler oluşturulacak
+planetNames:
+  # Önek havuzu (200 adet)
+  prefixes:
+    - "Zyr"
+    - "Kry"
+    - "Vel"
+    - "Xan"
+    - "Thal"
+    - "Nex"
+    - "Vor"
+    - "Aether"
+    - "Lumi"
+    - "Nyx"
+    - "Ori"
+    - "Zel"
+    - "Kep"
+    - "Dra"
+    - "Pho"
+    - "Sol"
+    - "Lun"
+    - "Stel"
+    - "Cos"
+    - "Ast"
+    - "Gal"
+    - "Neb"
+    - "Pul"
+    - "Qua"
+    - "Mag"
+    - "Ion"
+    - "Ply"
+    - "Erg"
+    - "Zen"
+    - "Var"
+    - "Kra"
+    - "Bly"
+    - "Cyn"
+    - "Dex"
+    - "Fen"
+    - "Glo"
+    - "Hex"
+    - "Jax"
+    - "Kyl"
+    - "Lyr"
+    - "Myr"
+    - "Nyl"
+    - "Pyx"
+    - "Rex"
+    - "Syx"
+    - "Tyx"
+    - "Vyx"
+    - "Wyx"
+    - "Zyx"
+    - "Alp"
+    - "Bet"
+    - "Gam"
+    - "Del"
+    - "Eps"
+    - "Zet"
+    - "Eta"
+    - "The"
+    - "Iot"
+    - "Kap"
+    - "Lam"
+    - "Om"
+    - "Sig"
+    - "Tau"
+    - "Phi"
+    - "Chi"
+    - "Psi"
+    - "Ome"
+    - "Arc"
+    - "Bor"
+    - "Cel"
+    - "Dor"
+    - "Elys"
+    - "Flux"
+    - "Grav"
+    - "Hel"
+    - "Inf"
+    - "Jov"
+    - "Kal"
+    - "Lex"
+    - "Mor"
+    - "Nov"
+    - "Oxy"
+    - "Par"
+    - "Qal"
+    - "Rad"
+    - "Syn"
+    - "Ter"
+    - "Ultr"
+    - "Vox"
+    - "Warp"
+    - "Xer"
+    - "Ygg"
+    - "Zon"
+    - "Apex"
+    - "Blade"
+    - "Core"
+    - "Dawn"
+    - "Echo"
+    - "Fade"
+    - "Gale"
+    - "Haze"
+    - "Iris"
+    - "Jade"
+    - "Kraken"
+    - "Lotus"
+    - "Mist"
+    - "Nexus"
+    - "Onyx"
+    - "Pearl"
+    - "Quantum"
+    - "Raven"
+    - "Shadow"
+    - "Titan"
+    - "Umbra"
+    - "Vortex"
+    - "Wyrm"
+    - "Xenon"
+    - "Yonder"
+    - "Zenith"
+    - "Akasha"
+    - "Boreas"
+    - "Caelum"
+    - "Draco"
+    - "Eurus"
+    - "Fafnir"
+    - "Gaian"
+    - "Hydra"
+    - "Icarus"
+    - "Jotun"
+    - "Krono"
+    - "Levia"
+    - "Midgar"
+    - "Nifl"
+    - "Odin"
+    - "Proxima"
+    - "Quasar"
+    - "Ragnar"
+    - "Sirius"
+    - "Thule"
+    - "Utgard"
+    - "Valhall"
+    - "Woden"
+    - "Xerxes"
+    - "Ymir"
+    - "Zodiac"
+    - "Altair"
+    - "Betel"
+    - "Canop"
+    - "Deneb"
+    - "Erida"
+    - "Fornax"
+    - "Gemini"
+    - "Hydrus"
+    - "Indus"
+    - "Kepler"
+    - "Lyrae"
+    - "Musca"
+    - "Norma"
+    - "Orion"
+    - "Pavon"
+    - "Rigel"
+    - "Scutum"
+    - "Tauri"
+    - "Ursa"
+    - "Vega"
+    - "Wilhe"
+    - "Xaldin"
+    - "Yeager"
+    - "Zephyr"
+    - "Acheron"
+    - "Bifrost"
+    - "Cymbal"
+    - "Delphi"
+    - "Elara"
+    - "Fenris"
+    - "Galvan"
+    - "Helion"
+    - "Ixion"
+    - "Janus"
+    - "Kharon"
+    - "Lazarus"
+    - "Mimas"
+    - "Nereid"
+    - "Oberon"
+    - "Proteus"
+    - "Quaoar"
+    - "Rhea"
+    - "Sedna"
+    - "Triton"
+    - "Umbriel"
+    - "Varda"
+    - "Weywot"
+  
+  # Sonrak havuzu (200 adet)
+  suffixes:
+    - "ion"
+    - "ara"
+    - "eon"
+    - "ius"
+    - "onis"
+    - "axis"
+    - "or"
+    - "is"
+    - "os"
+    - "us"
+    - "on"
+    - "ar"
+    - "el"
+    - "an"
+    - "en"
+    - "ix"
+    - "ox"
+    - "ex"
+    - "ax"
+    - "ux"
+    - "yx"
+    - "ath"
+    - "eth"
+    - "ith"
+    - "oth"
+    - "uth"
+    - "ria"
+    - "lia"
+    - "sia"
+    - "tia"
+    - "nia"
+    - "kor"
+    - "lor"
+    - "mor"
+    - "nor"
+    - "por"
+    - "rex"
+    - "lex"
+    - "dex"
+    - "pex"
+    - "vex"
+    - "rim"
+    - "lim"
+    - "vim"
+    - "nim"
+    - "pim"
+    - "ron"
+    - "lon"
+    - "mon"
+    - "ton"
+    - "von"
+    - "ral"
+    - "tal"
+    - "val"
+    - "nal"
+    - "mal"
+    - "ros"
+    - "los"
+    - "mos"
+    - "nos"
+    - "pos"
+    - "rus"
+    - "lus"
+    - "mus"
+    - "nus"
+    - "pus"
+    - "rion"
+    - "lion"
+    - "mion"
+    - "tion"
+    - "vion"
+    - "rax"
+    - "lax"
+    - "max"
+    - "nax"
+    - "pax"
+    - "ria"
+    - "lia"
+    - "mia"
+    - "nia"
+    - "pia"
+    - "sor"
+    - "tor"
+    - "vor"
+    - "wor"
+    - "xor"
+    - "sia"
+    - "tia"
+    - "via"
+    - "wia"
+    - "xia"
+    - "ran"
+    - "lan"
+    - "man"
+    - "nan"
+    - "pan"
+    - "ren"
+    - "len"
+    - "men"
+    - "nen"
+    - "pen"
+    - "rin"
+    - "lin"
+    - "min"
+    - "nin"
+    - "pin"
+    - "ron"
+    - "lon"
+    - "mon"
+    - "non"
+    - "pon"
+    - "run"
+    - "lun"
+    - "mun"
+    - "nun"
+    - "pun"
+    - "ryn"
+    - "lyn"
+    - "myn"
+    - "nyn"
+    - "pyn"
+    - "thor"
+    - "dor"
+    - "gor"
+    - "kor"
+    - "thor"
+    - "thar"
+    - "dar"
+    - "gar"
+    - "kar"
+    - "thar"
+    - "thir"
+    - "dir"
+    - "gir"
+    - "kir"
+    - "thir"
+    - "thor"
+    - "dor"
+    - "gor"
+    - "kor"
+    - "thor"
+    - "thur"
+    - "dur"
+    - "gur"
+    - "kur"
+    - "thur"
+    - "drax"
+    - "grax"
+    - "krax"
+    - "trax"
+    - "prax"
+    - "drix"
+    - "grix"
+    - "krix"
+    - "trix"
+    - "prix"
+    - "drox"
+    - "grox"
+    - "krox"
+    - "trox"
+    - "prox"
+    - "drux"
+    - "grux"
+    - "krux"
+    - "trux"
+    - "prux"
+    - "dryx"
+    - "gryx"
+    - "kryx"
+    - "tryx"
+    - "pryx"
+    - "shan"
+    - "chan"
+    - "khan"
+    - "than"
+    - "phan"
+    - "shen"
+    - "chen"
+    - "khen"
+    - "then"
+    - "phen"
+    - "shin"
+    - "chin"
+    - "khin"
+    - "thin"
+    - "phin"
+    - "shon"
+    - "chon"
+    - "khon"
+    - "thon"
+    - "phon"
+    - "shun"
+    - "chun"
+    - "khun"
+    - "thun"
+    - "phun"
+    - "valos"
+    - "talos"
+    - "kalos"
+    - "malos"
+    - "nalos"
+    - "velos"
+    - "telos"
+    - "kelos"
+    - "melos"
+    - "nelos"
+  
+  # Takı ekleri (50 adet)
+  postfixes:
+    - "Prime"
+    - "Alpha"
+    - "Beta"
+    - "Gamma"
+    - "Delta"
+    - "Omega"
+    - "Nova"
+    - "IX"
+    - "X"
+    - "VII"
+    - "XII"
+    - "V"
+    - "III"
+    - "Ultima"
+    - "Maxima"
+    - "Minima"
+    - "Major"
+    - "Minor"
+    - "Superior"
+    - "Inferior"
+    - "Primus"
+    - "Secundus"
+    - "Tertius"
+    - "Quintus"
+    - "Zero"
+    - "One"
+    - "Two"
+    - "Core"
+    - "Edge"
+    - "Rim"
+    - "Hub"
+    - "Nexus"
+    - "Apex"
+    - "Zenith"
+    - "Nadir"
+    - "Centris"
+    - "Australis"
+    - "Borealis"
+    - "Occidentis"
+    - "Orientis"
+    - "Obscura"
+    - "Luminosa"
+    - "Tenebris"
+    - "Radiata"
+    - "Crystallis"
+    - "Metallica"
+    - "Glacialis"
+    - "Volcanus"
+    - "Aquaticus"
+    - "Desertus"
+  
+  # İsim formatı (rastgele seçilir)
+  # {prefix}{suffix} = "Zyron"
+  # {prefix}{suffix}-{postfix} = "Thalos-Prime"
+  # {prefix}{suffix} {number} = "Velara 7"
+  # {prefix} {postfix} = "Nyx Omega"
+  formats:
+    - "{prefix}{suffix}"
+    - "{prefix}{suffix}-{postfix}"
+    - "{prefix}{suffix} {number}"
+    - "{prefix} {postfix}"
+    - "{prefix}{suffix}-{number}"
+  
+  # Rastgele sayı aralığı
+  numberRange:
+    min: 1
+    max: 999

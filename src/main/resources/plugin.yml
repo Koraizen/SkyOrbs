@@ -1,0 +1,50 @@
+name: SkyOrbs
+version: '${project.version}'
+main: com.skyorbs.SkyOrbs
+api-version: '1.21'
+author: SkyOrbs Team
+description: Türkçe Minecraft gezegen oluşturma eklentisi - 15+ şekil, 30+ biyom, asteroid sistemi
+website: https://github.com/skyorbs/skyorbs
+
+commands:
+  gezegen:
+    description: Ana gezegen yönetim komutu
+    usage: /<command> [create|list|info|tp|sil|reload]
+    aliases: [planet, orb, skyorbs]
+    permission: skyorbs.use
+
+permissions:
+  skyorbs.*:
+    description: Tüm SkyOrbs izinleri
+    default: op
+    children:
+      skyorbs.use: true
+      skyorbs.create: true
+      skyorbs.tp: true
+      skyorbs.info: true
+      skyorbs.list: true
+      skyorbs.admin: true
+  
+  skyorbs.use:
+    description: Temel gezegen komutlarını kullanma
+    default: true
+  
+  skyorbs.create:
+    description: Gezegen oluşturma izni
+    default: true
+  
+  skyorbs.list:
+    description: Gezegen listesini görüntüleme
+    default: true
+  
+  skyorbs.info:
+    description: Gezegen bilgilerini görüntüleme
+    default: true
+  
+  skyorbs.tp:
+    description: Gezegenlere ışınlanma
+    default: true
+  
+  skyorbs.admin:
+    description: Admin komutları (sil, reload)
+    default: op
