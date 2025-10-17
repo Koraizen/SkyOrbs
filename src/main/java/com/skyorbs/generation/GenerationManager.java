@@ -66,6 +66,16 @@ public class GenerationManager {
                 );
 
                 BiomeType biome = BiomeType.getRandomBiomeWeighted(random);
+                
+                // NEW: Select random palette for diversity
+                com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
+                
+                // NEW: Resolve modifiers for variety
+                com.skyorbs.modifiers.ModifierResolver modifierResolver = new com.skyorbs.modifiers.ModifierResolver(seed);
+                java.util.Set<com.skyorbs.modifiers.PlanetModifier> modifiers = modifierResolver.resolveModifiers();
+                
+                // NEW: Select atmosphere
+                com.skyorbs.atmosphere.AtmosphereType atmosphere = plugin.getAtmosphereManager().selectRandomAtmosphere(random);
 
                 Orb orb = new Orb(
                     UUID.randomUUID(),
@@ -82,6 +92,14 @@ public class GenerationManager {
                     false,
                     null
                 );
+                
+                // NEW: Set advanced features
+                orb.setPaletteId(palette.getId());
+                orb.setModifiers(modifiers);
+                orb.setAtmosphere(atmosphere);
+                
+                // NEW: Register atmosphere effects
+                plugin.getAtmosphereManager().registerPlanetAtmosphere(orb.getId(), atmosphere);
 
                 // İLK: Hemen teleport et (üst yüzeye) - gerçek konum hesapla
                 Location immediateLoc = new Location(world, placement.getX(), placement.getY() + radius + 10, placement.getZ());
@@ -324,9 +342,8 @@ public class GenerationManager {
         long seed = orb.getSeed();
         Random random = new Random(seed);
 
-        // GEZEGEN TİPİ BELİRLE - Configurable hollow planet probability
-        double hollowProbability = plugin.getConfig().getDouble("modifiers.hollow.probability", 0.4);
-        boolean isHollow = random.nextDouble() < hollowProbability;
+        // GEZEGEN TİPİ BELİRLE - Use modifier system
+        boolean isHollow = orb.isHollow(); // Check if HOLLOW modifier is present
 
         // 1. PLANET GENERATION (Async) - ÇEŞİTLİ TİPTE GEZEGENLER!
         CompletableFuture.supplyAsync(() -> {
@@ -371,6 +388,9 @@ public class GenerationManager {
      * SOLID PLANET - Tam dolu klasik gezegen
      */
     private void generateSolidPlanet(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
+        // NEW: Get palette for diverse blocks
+        com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
+        
         for (int y = radius; y >= -radius; y--) {
             for (int x = -radius; x <= radius; x++) {
                 for (int z = -radius; z <= radius; z++) {
@@ -379,7 +399,8 @@ public class GenerationManager {
                     if (distance <= radius) {
                         if (shape.isBlockPart(x, y, z, radius, seed)) {
                             int depth = (int)(radius - distance);
-                            Material material = biome.getMaterial(depth, random);
+                            // NEW: Use palette instead of biome for material selection
+                            Material material = palette.getMaterialByDepth(depth, random);
                             blocks.add(new BlockPlacement(cx + x, cy + y, cz + z, material));
                         }
                     }
@@ -394,6 +415,9 @@ public class GenerationManager {
     private void generateHollowPlanet(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
         // Configurable shell thickness
         int shellThickness = plugin.getConfig().getInt("hollow.shell_thickness", 5);
+        
+        // NEW: Get palette for diverse blocks
+        com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
 
         for (int y = radius; y >= -radius; y--) {
             for (int x = -radius; x <= radius; x++) {
@@ -404,7 +428,8 @@ public class GenerationManager {
                     if (distance <= radius && distance >= radius - shellThickness) {
                         if (shape.isBlockPart(x, y, z, radius, seed)) {
                             int depth = (int)(radius - distance);
-                            Material material = biome.getMaterial(depth, random);
+                            // NEW: Use palette instead of biome
+                            Material material = palette.getMaterialByDepth(depth, random);
                             blocks.add(new BlockPlacement(cx + x, cy + y, cz + z, material));
                         }
                     }

@@ -6,6 +6,8 @@ import com.skyorbs.generation.GenerationManager;
 import com.skyorbs.shapes.ShapeRegistry;
 import com.skyorbs.storage.DatabaseManager;
 import com.skyorbs.dungeons.DungeonGenerator;
+import com.skyorbs.palettes.PaletteRegistry;
+import com.skyorbs.atmosphere.PlanetAtmosphereManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,6 +21,8 @@ public class SkyOrbs extends JavaPlugin {
     private GenerationManager generationManager;
     private ShapeRegistry shapeRegistry;
     private DungeonGenerator dungeonGenerator;
+    private PaletteRegistry paletteRegistry;
+    private PlanetAtmosphereManager atmosphereManager;
     
     // Performans metrikleri
     private long startupTime;
@@ -53,6 +57,15 @@ public class SkyOrbs extends JavaPlugin {
             shapeRegistry.registerAllShapes();
             logSuccess("✓ " + shapeRegistry.getShapeCount() + " gezegen şekli kaydedildi");
             
+            // 3.5. Palette Registry (20+ palettes for diversity)
+            paletteRegistry = new PaletteRegistry();
+            logSuccess("✓ " + paletteRegistry.getPaletteCount() + " gezegen paleti kaydedildi");
+            
+            // 3.6. Atmosphere Manager
+            atmosphereManager = new PlanetAtmosphereManager(this);
+            atmosphereManager.start();
+            logSuccess("✓ Atmosfer efekt sistemi başlatıldı");
+            
             // 4. Generation Manager
             generationManager = new GenerationManager(this);
             logSuccess("✓ Gezegen üretim sistemi hazır");
@@ -82,9 +95,14 @@ public class SkyOrbs extends JavaPlugin {
             }
             
             long loadTime = System.currentTimeMillis() - startupTime;
+            
+            // Calculate total combinations
+            int totalCombinations = shapeRegistry.getShapeCount() * paletteRegistry.getPaletteCount() * 8; // 8 atmospheres
+            
             logSuccess("========================================");
             logSuccess("SkyOrbs başarıyla aktifleştirildi!");
-            logSuccess("17 gezegen şekli, 22 biyom, asteroid/uydu sistemi hazır!");
+            logSuccess("17 şekil × 20 palet × 8 atmosfer = " + totalCombinations + "+ gezegen kombinasyonu!");
+            logSuccess("Modifiyerler ile 10,000+ farklı gezegen çeşidi mümkün!");
             logSuccess("Yükleme süresi: " + loadTime + "ms");
             logSuccess("========================================");
             
@@ -98,6 +116,11 @@ public class SkyOrbs extends JavaPlugin {
     public void onDisable() {
         logInfo("========================================");
         logInfo("SkyOrbs devre dışı bırakılıyor...");
+        
+        if (atmosphereManager != null) {
+            atmosphereManager.stop();
+            logSuccess("✓ Atmosfer sistemi durduruldu");
+        }
         
         if (generationManager != null) {
             generationManager.shutdown();
@@ -254,6 +277,14 @@ public class SkyOrbs extends JavaPlugin {
 
     public DungeonGenerator getDungeonGenerator() {
         return dungeonGenerator;
+    }
+    
+    public PaletteRegistry getPaletteRegistry() {
+        return paletteRegistry;
+    }
+    
+    public PlanetAtmosphereManager getAtmosphereManager() {
+        return atmosphereManager;
     }
     
     public int getTotalPlanetsGenerated() {
