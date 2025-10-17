@@ -5,6 +5,7 @@ import com.skyorbs.core.Orb;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -81,7 +82,13 @@ public class PlanetAtmosphereManager {
      */
     private Orb findNearestPlanet(Player player) {
         Location playerLoc = player.getLocation();
-        List<Orb> allPlanets = plugin.getDatabaseManager().getAllOrbs();
+        List<Orb> allPlanets;
+        
+        try {
+            allPlanets = plugin.getDatabaseManager().getAllOrbs();
+        } catch (Exception e) {
+            return null; // Return null if database error
+        }
         
         Orb nearest = null;
         double minDistance = Double.MAX_VALUE;

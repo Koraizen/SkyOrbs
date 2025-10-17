@@ -154,8 +154,8 @@ public class PaletteRegistry {
         register(new PlanetPalette("concrete", "Beton",
             new Material[]{Material.LIGHT_GRAY_CONCRETE, Material.GRAY_CONCRETE, Material.WHITE_CONCRETE},
             new Material[]{Material.GRAY_CONCRETE, Material.STONE, Material.ANDESITE},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.BEDROCK},
-            new Material[]{Material.CONCRETE_POWDER, Material.GRAVEL},
+            new Material[]{Material.STONE, Material.DEEPSLATE, Material.STONE},
+            new Material[]{Material.GRAVEL, Material.COBBLESTONE},
             6.0));
         
         // Prismarine (ocean, ancient)

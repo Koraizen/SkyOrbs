@@ -23,7 +23,7 @@ public enum AtmosphereType {
         Particle.CLOUD, PotionEffectType.SLOWNESS, true, false),
     
     FOGGY("Foggy", "Sisli", 0.08,
-        Particle.SUSPENDED_DEPTH, PotionEffectType.BLINDNESS, true, false),
+        Particle.CLOUD, PotionEffectType.BLINDNESS, true, false),
     
     CORROSIVE("Corrosive", "Aşındırıcı", 0.05,
         Particle.PORTAL, PotionEffectType.WITHER, true, false),
