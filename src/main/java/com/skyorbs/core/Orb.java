@@ -1,6 +1,10 @@
 package com.skyorbs.core;
 
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
+import com.skyorbs.modifiers.PlanetModifier;
+import com.skyorbs.atmosphere.AtmosphereType;
 
 public class Orb {
 
@@ -26,6 +30,11 @@ public class Orb {
     private int biosphereLevel;
     private double ecologicalBalance;
     
+    // Advanced planet features
+    private String paletteId;
+    private Set<PlanetModifier> modifiers;
+    private AtmosphereType atmosphere;
+    
     public Orb(UUID id, String name, String worldName, int centerX, int centerY, int centerZ,
                int radius, String shapeName, String biomeName, long seed, long createdAt,
                boolean isAsteroid, UUID parentId) {
@@ -50,6 +59,11 @@ public class Orb {
         this.planetType = PlanetType.TERRESTRIAL; // Default type
         this.biosphereLevel = 1;
         this.ecologicalBalance = 1.0;
+        
+        // Initialize advanced features
+        this.paletteId = null;
+        this.modifiers = new HashSet<>();
+        this.atmosphere = AtmosphereType.CLEAR;
     }
     
     public UUID getId() {
@@ -185,5 +199,46 @@ public class Orb {
 
     public boolean canUpgrade() {
         return xp >= getXpForNextLevel();
+    }
+    
+    // Advanced features getters and setters
+    public String getPaletteId() {
+        return paletteId;
+    }
+    
+    public void setPaletteId(String paletteId) {
+        this.paletteId = paletteId;
+    }
+    
+    public Set<PlanetModifier> getModifiers() {
+        return modifiers;
+    }
+    
+    public void setModifiers(Set<PlanetModifier> modifiers) {
+        this.modifiers = modifiers != null ? modifiers : new HashSet<>();
+    }
+    
+    public void addModifier(PlanetModifier modifier) {
+        this.modifiers.add(modifier);
+    }
+    
+    public boolean hasModifier(PlanetModifier modifier) {
+        return modifiers.contains(modifier);
+    }
+    
+    public AtmosphereType getAtmosphere() {
+        return atmosphere;
+    }
+    
+    public void setAtmosphere(AtmosphereType atmosphere) {
+        this.atmosphere = atmosphere != null ? atmosphere : AtmosphereType.CLEAR;
+    }
+    
+    public boolean isHollow() {
+        return modifiers.contains(PlanetModifier.HOLLOW);
+    }
+    
+    public boolean isOreRich() {
+        return modifiers.contains(PlanetModifier.ORE_RICH);
     }
 }
