@@ -66,18 +66,82 @@ public class ConfigManager {
     }
     
     // ============================================
-    // ŞEKİL AĞIRLIKLARI
+    // ŞEKİL AĞIRLIKLARI - CACHE'LENMİŞ
     // ============================================
-    
+
+    private Map<String, Double> shapeWeightsCache = null;
+
     public Map<String, Double> getShapeWeights() {
+        if (shapeWeightsCache != null) {
+            return new HashMap<>(shapeWeightsCache); // Defensive copy
+        }
+
         Map<String, Double> weights = new HashMap<>();
-        ConfigurationSection section = plugin.getConfig().getConfigurationSection("shapes.weights");
+
+        // DOĞRU PATH: generation.shapes.weights
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("generation.shapes.weights");
+
         if (section != null) {
             for (String key : section.getKeys(false)) {
-                weights.put(key, section.getDouble(key));
+                double weight = section.getDouble(key);
+                weights.put(key.toUpperCase(), weight); // Uppercase'e çevir
+                plugin.logDebug("shapes", "Loaded shape: " + key + " = " + weight);
             }
         }
-        return weights;
+
+        // Config boşsa defaults kullan
+        if (weights.isEmpty()) {
+            plugin.logWarning("No shape weights found in config! Using defaults.");
+            weights = getDefaultShapeWeights();
+        }
+
+        shapeWeightsCache = weights;
+        plugin.logInfo("Loaded " + weights.size() + " shape weights from config");
+        return new HashMap<>(weights);
+    }
+
+    /**
+     * Default shape weights
+     */
+    private Map<String, Double> getDefaultShapeWeights() {
+        Map<String, Double> defaults = new HashMap<>();
+        defaults.put("SPHERE", 5.0);
+        defaults.put("HEMISPHERE", 8.0);
+        defaults.put("BLOB", 10.0);
+        defaults.put("ELLIPSOID", 8.0);
+        defaults.put("ASTEROID", 7.0);
+        defaults.put("TORUS", 4.0);
+        defaults.put("RING", 3.0);
+        defaults.put("CYLINDER", 5.0);
+        defaults.put("CONE", 6.0);
+        defaults.put("DIAMOND", 5.0);
+        defaults.put("CUBE", 4.0);
+        defaults.put("PYRAMID", 4.0);
+        defaults.put("OCTAHEDRON", 3.0);
+        defaults.put("FRACTAL", 6.0);
+        defaults.put("SPIKY", 5.0);
+        defaults.put("COMET", 3.0);
+        defaults.put("CRESCENT", 4.0);
+        defaults.put("HYBRID", 2.0);
+        defaults.put("LAYERED", 7.0);
+        defaults.put("CRATERED", 8.0);
+        defaults.put("HONEYCOMB", 5.0);
+        defaults.put("SPIRAL", 6.0);
+        defaults.put("WAVE", 7.0);
+        defaults.put("CRYSTAL", 6.0);
+        defaults.put("ORGANIC", 8.0);
+        defaults.put("GEOMETRIC", 5.0);
+        defaults.put("NEBULA", 4.0);
+        defaults.put("ASTEROID_FIELD", 6.0);
+        return defaults;
+    }
+
+    /**
+     * Cache'leri temizle (reload için)
+     */
+    public void clearCaches() {
+        shapeWeightsCache = null;
+        plugin.logDebug("config", "Cleared all config caches");
     }
     
     // ============================================
@@ -167,21 +231,110 @@ public class ConfigManager {
     // ============================================
     // ORE SİSTEMİ AYARLARI
     // ============================================
-    
+
     public boolean isOreGenerationEnabled() {
         return plugin.getConfig().getBoolean("features.ores.enabled", true);
     }
-    
+
     public double getOreMultiplier() {
         return plugin.getConfig().getDouble("features.ores.densityMultiplier", 1.0);
     }
-    
+
     public boolean isDeepslateEnabled() {
         return plugin.getConfig().getBoolean("features.ores.deepslateVariants", true);
     }
-    
+
     public boolean areBiomeBonusesEnabled() {
         return plugin.getConfig().getBoolean("features.ores.biomeBonuses", true);
+    }
+
+    // ============================================
+    // PLANET TYPE ORE CONFIGURATIONS
+    // ============================================
+
+    /**
+     * Get ore configurations for a specific planet type
+     */
+    public Map<String, Object> getOreConfigForPlanetType(String planetType) {
+        String path = "features.ores.planetTypes." + planetType.toLowerCase();
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection(path);
+
+        if (section == null) {
+            // Return default config
+            return getDefaultOreConfig();
+        }
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("enabled", section.getBoolean("enabled", true));
+        config.put("densityMultiplier", section.getDouble("densityMultiplier", 1.0));
+
+        // Ore-specific configs
+        ConfigurationSection oresSection = section.getConfigurationSection("ores");
+        if (oresSection != null) {
+            Map<String, Map<String, Object>> ores = new HashMap<>();
+            for (String oreKey : oresSection.getKeys(false)) {
+                ConfigurationSection oreSection = oresSection.getConfigurationSection(oreKey);
+                if (oreSection != null) {
+                    Map<String, Object> oreConfig = new HashMap<>();
+                    oreConfig.put("chance", oreSection.getDouble("chance", 0.0));
+                    oreConfig.put("minVein", oreSection.getInt("minVein", 1));
+                    oreConfig.put("maxVein", oreSection.getInt("maxVein", 1));
+                    oreConfig.put("enabled", oreSection.getBoolean("enabled", true));
+                    ores.put(oreKey.toUpperCase(), oreConfig);
+                }
+            }
+            config.put("ores", ores);
+        }
+
+        return config;
+    }
+
+    /**
+     * Get default ore configuration
+     */
+    private Map<String, Object> getDefaultOreConfig() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("enabled", true);
+        config.put("densityMultiplier", 1.0);
+        return config;
+    }
+
+    /**
+     * Set ore configuration for a planet type (real-time)
+     */
+    public void setOreConfigForPlanetType(String planetType, String oreType, String property, Object value) {
+        String path = "features.ores.planetTypes." + planetType.toLowerCase() + ".ores." + oreType.toLowerCase() + "." + property;
+        plugin.getConfig().set(path, value);
+        plugin.saveConfig();
+        plugin.logInfo("Updated ore config: " + path + " = " + value);
+    }
+
+    /**
+     * Set planet type ore density multiplier
+     */
+    public void setPlanetTypeOreMultiplier(String planetType, double multiplier) {
+        String path = "features.ores.planetTypes." + planetType.toLowerCase() + ".densityMultiplier";
+        plugin.getConfig().set(path, multiplier);
+        plugin.saveConfig();
+        plugin.logInfo("Updated " + planetType + " ore density multiplier to " + multiplier);
+    }
+
+    /**
+     * Enable/disable ore generation for planet type
+     */
+    public void setPlanetTypeOreEnabled(String planetType, boolean enabled) {
+        String path = "features.ores.planetTypes." + planetType.toLowerCase() + ".enabled";
+        plugin.getConfig().set(path, enabled);
+        plugin.saveConfig();
+        plugin.logInfo("Set " + planetType + " ore generation to " + (enabled ? "enabled" : "disabled"));
+    }
+
+    /**
+     * Get all configured planet types
+     */
+    public Set<String> getConfiguredPlanetTypes() {
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("features.ores.planetTypes");
+        return section != null ? section.getKeys(false) : new HashSet<>();
     }
     
     // ============================================

@@ -59,6 +59,7 @@ public class PlanetPanelGUI {
             gui.setItem(45, createAdminScanItem(orb));
             gui.setItem(46, createAdminRepairItem(orb));
             gui.setItem(47, createAdminDebugItem(orb));
+            gui.setItem(48, createAdminConfigItem(orb));
         }
 
         // Close button
@@ -390,6 +391,21 @@ public class PlanetPanelGUI {
         lore.add("§7Debug bilgileri");
         lore.add("§7Detaylı loglar");
         lore.add("");
+        lore.add("§cAdmin komutu");
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private ItemStack createAdminConfigItem(Orb orb) {
+        ItemStack item = new ItemStack(Material.REDSTONE_LAMP);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName("§c§l[ADMIN] Konfigürasyon");
+        List<String> lore = new ArrayList<>();
+        lore.add("§7Sistem konfigürasyonları");
+        lore.add("§7Ore ayarları, performans, limitler");
+        lore.add("");
+        lore.add("§eTıklayarak aç!");
         lore.add("§cAdmin komutu");
         meta.setLore(lore);
         item.setItemMeta(meta);

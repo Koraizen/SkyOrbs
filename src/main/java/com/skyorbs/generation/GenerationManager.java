@@ -101,17 +101,17 @@ public class GenerationManager {
                 // NEW: Register atmosphere effects
                 plugin.getAtmosphereManager().registerPlanetAtmosphere(orb.getId(), atmosphere);
 
-                // İLK: Hemen teleport et (üst yüzeye) - gerçek konum hesapla
-                Location immediateLoc = new Location(world, placement.getX(), placement.getY() + radius + 10, placement.getZ());
+                // İLK: Güvenli teleport - gerçek yüzey konumunu hesapla
+                Location safeSurfaceLoc = findSafeInitialTeleportLocation(world, placement.getX(), placement.getY(), placement.getZ(), radius);
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    player.teleport(immediateLoc);
-                    player.sendMessage("§aGezegen yüzeyine ışınlandınız! Oluşturma devam ediyor...");
+                    player.teleport(safeSurfaceLoc);
+                    player.sendMessage("§aGezegen yüzeyine güvenli şekilde ışınlandınız! Oluşturma devam ediyor...");
                     player.sendMessage("§eİlk bloklar yerleştiriliyor... (Yukarıdan aşağıya)");
                 });
 
                 // Progress tracking için toplam adım sayısı
                 final int[] progress = {0};
-                final int totalSteps = 8; // Shell + Ores + Trees + Structures + Treasures + Dungeons + Asteroids + Satellites
+                final int totalSteps = 12; // Daha detaylı progress: Shell(2) + Ores(2) + Trees + Structures + Treasures + Dungeons + Surface + Rings + Final
 
                 // Progress display type from config
                 String progressType = plugin.getConfig().getString("progress_display.type", "bossbar");
@@ -129,7 +129,7 @@ public class GenerationManager {
                     });
                 }
 
-                // Progress mesajı gönderici
+                // Progress mesajı gönderici - HER ADIMDA GÜNCELLEME!
                 Runnable sendProgress = () -> {
                     int percent = (progress[0] * 100) / totalSteps;
                     double progressValue = (double) progress[0] / totalSteps;
@@ -154,25 +154,19 @@ public class GenerationManager {
                 generatePlanetShellAsync(world, orb, shape, biome, () -> {
                     progress[0]++;
                     sendProgress.run();
-                    
+
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         player.sendMessage("§eGezegen kabuğu tamamlandı! Şimdi özellikler ekleniyor...");
                     });
 
                     try {
-                        // ORE GENERATION - GEZEGEN BLOKLARINDAN SONRA!
+                        // ORE GENERATION - Artık gezegen yapısının bir parçası olarak yukarıda yapıldı!
+                        // Eski ayrı ore generation'ı kaldırıldı çünkü artık gezegen blokları ile entegre
                         progress[0]++;
                         sendProgress.run();
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            player.sendMessage("§eMadenciler çalışıyor...");
+                            player.sendMessage("§eMadenciler çalışıyor... ✓ (Gezegen yapısına entegre)");
                         });
-
-                        List<OreGenerator.BlockData> ores = OreGenerator.generateOres(orb, biome, world);
-                        List<BlockPlacement> oreBlocks = new ArrayList<>();
-                        for (OreGenerator.BlockData ore : ores) {
-                            oreBlocks.add(new BlockPlacement(ore.x, ore.y, ore.z, ore.material));
-                        }
-                        placeBlocksInBatches(world, oreBlocks, null, true); // allowReplacement = true for ores
 
                         // AĞAÇ GENERATION
                         progress[0]++;
@@ -223,7 +217,7 @@ public class GenerationManager {
                         // Generate dungeons inside planet
                         int dungeonCount = Math.max(1, radius / 8);
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            List<com.skyorbs.dungeons.DungeonGenerator.DungeonRoom> dungeons = 
+                            List<com.skyorbs.dungeons.DungeonGenerator.DungeonRoom> dungeons =
                                 plugin.getDungeonGenerator().generateDungeons(orb, dungeonCount);
                         });
 
@@ -233,7 +227,7 @@ public class GenerationManager {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             player.sendMessage("§eYüzey detayları ekleniyor...");
                         });
-                        
+
                         generateSurfaceDetails(world, orb, biome, random);
 
                         // YENİ: HALKALAR - Bazı gezegenlerde
@@ -243,9 +237,20 @@ public class GenerationManager {
                             Bukkit.getScheduler().runTask(plugin, () -> {
                                 player.sendMessage("§eGezegen halkaları oluşturuluyor...");
                             });
-                            
+
                             generatePlanetaryRings(world, orb, random);
+                        } else {
+                            // Halka yoksa da progress artır
+                            progress[0]++;
+                            sendProgress.run();
                         }
+
+                        // FINALIZATION
+                        progress[0]++;
+                        sendProgress.run();
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            player.sendMessage("§eSon düzenlemeler yapılıyor...");
+                        });
 
                         // Save main planet
                         plugin.getDatabaseManager().saveOrb(orb);
@@ -351,8 +356,13 @@ public class GenerationManager {
                 });
             }
 
-            // 5. PLACE PLANET BLOCKS FIRST
-            placeBlocksInBatches(world, blocks, callback);
+            // 5. PLACE PLANET BLOCKS FIRST - Progress ile
+            placeBlocksInBatches(world, blocks, () -> {
+                // Shell placement tamamlandıktan sonra callback çalıştır
+                if (callback != null) {
+                    callback.run();
+                }
+            });
 
         }, executor);
     }
@@ -363,7 +373,8 @@ public class GenerationManager {
     private void generateSolidPlanet(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
         // NEW: Get palette for diverse blocks
         com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
-        
+
+        // Generate planet blocks AND ores together as part of the planet structure
         for (int y = radius; y >= -radius; y--) {
             for (int x = -radius; x <= radius; x++) {
                 for (int z = -radius; z <= radius; z++) {
@@ -374,12 +385,160 @@ public class GenerationManager {
                             int depth = (int)(radius - distance);
                             // NEW: Use palette instead of biome for material selection
                             Material material = palette.getMaterialByDepth(depth, random);
+
+                            // CORE SYSTEM: Generate special core materials in the very center
+                            double coreRadius = radius * 0.15; // Core is 15% of planet radius
+                            if (distance <= coreRadius) {
+                                material = generateCoreMaterial(depth, biome, random);
+                            } else {
+                                // INTEGRATE ORES: Replace some blocks with ores during planet generation
+                                Material oreMaterial = tryGenerateOre(cx + x, cy + y, cz + z, distance, radius, biome, random);
+                                if (oreMaterial != null) {
+                                    material = oreMaterial;
+                                }
+                            }
+
                             blocks.add(new BlockPlacement(cx + x, cy + y, cz + z, material));
                         }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Generate special core materials for planet centers
+     */
+    private Material generateCoreMaterial(int depth, BiomeType biome, Random random) {
+        // Core materials based on biome type
+        return switch (biome) {
+            case LAVA_OCEAN, MAGMA_CAVES -> {
+                // Volcanic core - nether materials
+                yield random.nextDouble() < 0.3 ? Material.ANCIENT_DEBRIS :
+                      random.nextDouble() < 0.5 ? Material.NETHERITE_BLOCK :
+                      Material.MAGMA_BLOCK;
+            }
+            case CRYSTAL_FOREST, CRYSTALLINE -> {
+                // Crystal core - valuable gems
+                yield random.nextDouble() < 0.4 ? Material.DIAMOND_BLOCK :
+                      random.nextDouble() < 0.6 ? Material.EMERALD_BLOCK :
+                      Material.AMETHYST_BLOCK;
+            }
+            case VOID -> {
+                // Void core - mysterious materials
+                yield random.nextDouble() < 0.5 ? Material.END_STONE :
+                      random.nextDouble() < 0.75 ? Material.OBSIDIAN :
+                      Material.CRYING_OBSIDIAN;
+            }
+            case CORRUPTED -> {
+                // Corrupted core - warped materials
+                yield random.nextDouble() < 0.4 ? Material.WARPED_WART_BLOCK :
+                      random.nextDouble() < 0.7 ? Material.NETHER_WART_BLOCK :
+                      Material.SHROOMLIGHT;
+            }
+            default -> {
+                // Standard core - rare metals
+                yield random.nextDouble() < 0.3 ? Material.DIAMOND_BLOCK :
+                      random.nextDouble() < 0.6 ? Material.GOLD_BLOCK :
+                      Material.IRON_BLOCK;
+            }
+        };
+    }
+
+    /**
+     * Try to generate ore at this position as part of planet structure
+     */
+    private Material tryGenerateOre(int x, int y, int z, double distance, int radius, BiomeType biome, Random random) {
+        // Only generate ores inside solid planets, not on surface
+        if (distance > radius - 2) return null; // Leave surface layer clean
+
+        // Get ore configuration for this biome
+        var config = plugin.getConfigManager().getOreConfigForPlanetType(biome.name().toLowerCase());
+        if (!(Boolean) config.getOrDefault("enabled", true)) return null;
+
+        double densityMultiplier = (Double) config.getOrDefault("densityMultiplier", 1.0);
+
+        @SuppressWarnings("unchecked")
+        var ores = (java.util.Map<String, java.util.Map<String, Object>>) config.get("ores");
+        if (ores == null || ores.isEmpty()) return null;
+
+        // CORE RARITY SYSTEM: Ores become rarer and more valuable closer to center
+        double depthRatio = distance / radius; // 0 = center, 1 = surface
+        double coreMultiplier = 1.0;
+
+        // Define core region (central 20% of planet)
+        double coreRadius = radius * 0.2;
+        if (distance <= coreRadius) {
+            // Inside core - very rare but valuable ores
+            coreMultiplier = 0.1; // Much rarer in core
+        } else if (depthRatio < 0.4) {
+            // Near core - moderately rare
+            coreMultiplier = 0.3;
+        }
+
+        // Check each ore type
+        for (var entry : ores.entrySet()) {
+            String oreName = entry.getKey();
+            var oreData = entry.getValue();
+
+            boolean oreEnabled = (Boolean) oreData.getOrDefault("enabled", true);
+            if (!oreEnabled) continue;
+
+            double baseChance = ((Number) oreData.getOrDefault("chance", 0.0)).doubleValue();
+            double chance = baseChance * densityMultiplier * coreMultiplier;
+
+            // CORE VALUE SYSTEM: Rare ores appear more frequently in core
+            if (isRareOre(oreName) && distance <= coreRadius) {
+                chance *= 5.0; // 5x more likely for rare ores in core
+            }
+
+            int minVein = ((Number) oreData.getOrDefault("minVein", 1)).intValue();
+            int maxVein = ((Number) oreData.getOrDefault("maxVein", 1)).intValue();
+
+            // Apply density multiplier and check chance
+            if (random.nextDouble() < chance) {
+                // Generate ore using OreGenerator logic
+                return getOreMaterial(oreName);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if ore is considered "rare/valuable"
+     */
+    private boolean isRareOre(String oreName) {
+        return switch (oreName.toUpperCase()) {
+            case "DIAMOND", "EMERALD", "ANCIENT_DEBRIS", "NETHERITE" -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Get ore material from ore name
+     */
+    private Material getOreMaterial(String oreName) {
+        return switch (oreName.toUpperCase()) {
+            case "COAL" -> Material.COAL_ORE;
+            case "IRON" -> Material.IRON_ORE;
+            case "COPPER" -> Material.COPPER_ORE;
+            case "GOLD" -> Material.GOLD_ORE;
+            case "REDSTONE" -> Material.REDSTONE_ORE;
+            case "LAPIS" -> Material.LAPIS_ORE;
+            case "DIAMOND" -> Material.DIAMOND_ORE;
+            case "EMERALD" -> Material.DEEPSLATE_EMERALD_ORE;
+            case "ANCIENT_DEBRIS" -> Material.ANCIENT_DEBRIS;
+            case "NETHER_QUARTZ" -> Material.NETHER_QUARTZ_ORE;
+            case "NETHER_GOLD" -> Material.NETHER_GOLD_ORE;
+            case "GLOWSTONE" -> Material.GLOWSTONE;
+            case "OBSIDIAN" -> Material.OBSIDIAN;
+            case "SLIME" -> Material.SLIME_BLOCK;
+            case "AMETHYST" -> Material.AMETHYST_BLOCK;
+            case "PRISMARINE" -> Material.PRISMARINE_CRYSTALS;
+            case "NETHERRACK" -> Material.NETHERRACK;
+            default -> null;
+        };
     }
 
     /**
@@ -755,6 +914,66 @@ public class GenerationManager {
         placeBlocksInBatches(world, airBlocks, null);
     }
     
+    /**
+     * Güvenli ilk teleport konumu - gezegen oluşurken güvenli yüzey bulma
+     */
+    private Location findSafeInitialTeleportLocation(World world, int cx, int cy, int cz, int radius) {
+        // Gezegenin üst kısmından başlayarak aşağı doğru tara - find first solid block
+        // Daha geniş arama alanı ve daha güvenilir algoritma
+        for (int y = cy + radius + 5; y >= cy - radius; y--) {
+            // Spiral search pattern for better coverage
+            for (int searchRadius = 0; searchRadius <= 8; searchRadius++) {
+                for (int angle = 0; angle < 360; angle += 45) {
+                    double radian = Math.toRadians(angle);
+                    int x = cx + (int)(Math.cos(radian) * searchRadius);
+                    int z = cz + (int)(Math.sin(radian) * searchRadius);
+
+                    // Check if this position is on the planet surface
+                    double distanceFromCenter = Math.sqrt((x - cx) * (x - cx) + (z - cz) * (z - cz));
+                    if (distanceFromCenter > radius + 2) continue; // Too far from planet
+
+                    Block block = world.getBlockAt(x, y, z);
+                    Block below = world.getBlockAt(x, y - 1, z);
+                    Block twoBelow = world.getBlockAt(x, y - 2, z);
+
+                    // Katı blok üzerinde hava varsa güvenli konum
+                    if (block.getType() == Material.AIR &&
+                        below.getType().isSolid() &&
+                        twoBelow.getType().isSolid() &&
+                        !isDangerousBlock(below.getType()) &&
+                        !isDangerousBlock(twoBelow.getType())) {
+
+                        // Extra check: make sure there's enough space above
+                        boolean hasSpace = true;
+                        for (int checkY = y + 1; checkY <= y + 2; checkY++) {
+                            if (world.getBlockAt(x, checkY, z).getType() != Material.AIR) {
+                                hasSpace = false;
+                                break;
+                            }
+                        }
+
+                        if (hasSpace) {
+                            return new Location(world, x + 0.5, y, z + 0.5);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: Try center top
+        for (int y = cy + radius + 5; y >= cy + radius - 10; y--) {
+            Block block = world.getBlockAt(cx, y, cz);
+            Block below = world.getBlockAt(cx, y - 1, cz);
+
+            if (block.getType() == Material.AIR && below.getType().isSolid() && !isDangerousBlock(below.getType())) {
+                return new Location(world, cx + 0.5, y, cz + 0.5);
+            }
+        }
+
+        // Ultimate fallback
+        return new Location(world, cx, cy + radius + 10, cz);
+    }
+
     /**
      * Güvenli yüzey konumu bulma algoritması - First solid block teleport
      */

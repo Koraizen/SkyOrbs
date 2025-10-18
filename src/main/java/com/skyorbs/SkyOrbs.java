@@ -11,6 +11,7 @@ import com.skyorbs.atmosphere.PlanetAtmosphereManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Map;
 import java.util.logging.Level;
 
 public class SkyOrbs extends JavaPlugin {
@@ -23,6 +24,7 @@ public class SkyOrbs extends JavaPlugin {
     private DungeonGenerator dungeonGenerator;
     private PaletteRegistry paletteRegistry;
     private PlanetAtmosphereManager atmosphereManager;
+    private com.skyorbs.gui.AdminConfigGUI adminConfigGUI;
     
     // Performans metrikleri
     private long startupTime;
@@ -46,16 +48,35 @@ public class SkyOrbs extends JavaPlugin {
             configManager = new ConfigManager(this);
             configManager.validateConfig(); // Config doğrulama
             logSuccess("✓ Konfigürasyon yüklendi ve doğrulandı");
-            
+
             // 2. Database
             databaseManager = new DatabaseManager(this);
             databaseManager.initialize();
             logSuccess("✓ Veritabanı bağlantısı kuruldu");
-            
+
             // 3. Shape Registry
             shapeRegistry = new ShapeRegistry();
             shapeRegistry.registerAllShapes();
             logSuccess("✓ " + shapeRegistry.getShapeCount() + " gezegen şekli kaydedildi");
+
+            // SHAPE CONFIGURATION DEBUG
+            logInfo("========================================");
+            logInfo("SHAPE CONFIGURATION:");
+            logInfo("========================================");
+
+            Map<String, Double> weights = configManager.getShapeWeights();
+            if (weights.isEmpty()) {
+                logWarning("⚠ NO SHAPE WEIGHTS LOADED!");
+            } else {
+                logSuccess("✓ Loaded " + weights.size() + " shape weights:");
+                weights.entrySet().stream()
+                    .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                    .forEach(entry ->
+                        logInfo("  • " + entry.getKey() + " = " + entry.getValue())
+                    );
+            }
+
+            logInfo("========================================");
             
             // 3.5. Palette Registry (20+ palettes for diversity)
             paletteRegistry = new PaletteRegistry();
@@ -65,6 +86,10 @@ public class SkyOrbs extends JavaPlugin {
             atmosphereManager = new PlanetAtmosphereManager(this);
             atmosphereManager.start();
             logSuccess("✓ Atmosfer efekt sistemi başlatıldı");
+
+            // 3.7. Admin Config GUI
+            adminConfigGUI = new com.skyorbs.gui.AdminConfigGUI(this);
+            logSuccess("✓ Admin konfigürasyon GUI'si hazır");
             
             // 4. Generation Manager
             generationManager = new GenerationManager(this);
@@ -238,10 +263,23 @@ public class SkyOrbs extends JavaPlugin {
      * Config'i yeniden yükle
      */
     public void reloadPluginConfig() {
-        reloadConfig();
-        configManager = new ConfigManager(this);
-        configManager.validateConfig();
-        logSuccess("Konfigürasyon yeniden yüklendi ve doğrulandı");
+        try {
+            // 1. Config dosyasını yeniden yükle
+            reloadConfig();
+
+            // 2. ConfigManager'ı yeniden oluştur
+            configManager = new ConfigManager(this);
+
+            // 3. Validate et
+            configManager.validateConfig();
+
+            logSuccess("========================================");
+            logSuccess("CONFIG RELOADED SUCCESSFULLY!");
+            logSuccess("========================================");
+
+        } catch (Exception e) {
+            logError("Failed to reload config!", e);
+        }
     }
     
     /**
@@ -285,6 +323,10 @@ public class SkyOrbs extends JavaPlugin {
     
     public PlanetAtmosphereManager getAtmosphereManager() {
         return atmosphereManager;
+    }
+
+    public com.skyorbs.gui.AdminConfigGUI getAdminConfigGUI() {
+        return adminConfigGUI;
     }
     
     public int getTotalPlanetsGenerated() {
