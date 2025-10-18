@@ -452,11 +452,16 @@ public class GenerationManager {
         // Only generate ores inside solid planets, not on surface
         if (distance > radius - 2) return null; // Leave surface layer clean
 
-        // Get ore configuration for this biome
-        var config = plugin.getConfigManager().getOreConfigForPlanetType(biome.name().toLowerCase());
-        if (!(Boolean) config.getOrDefault("enabled", true)) return null;
+        // Get ore configuration for this biome (using biome name directly)
+        String biomeName = biome.name().toLowerCase();
+        var config = plugin.getConfigManager().getOreConfigForPlanetType(biomeName);
 
-        double densityMultiplier = (Double) config.getOrDefault("densityMultiplier", 1.0);
+        // Check if ore generation is enabled for this biome
+        boolean enabled = config.containsKey("enabled") ? (Boolean) config.get("enabled") : true;
+        if (!enabled) return null;
+
+        double densityMultiplier = config.containsKey("densityMultiplier") ?
+            ((Number) config.get("densityMultiplier")).doubleValue() : 1.0;
 
         @SuppressWarnings("unchecked")
         var ores = (java.util.Map<String, java.util.Map<String, Object>>) config.get("ores");
@@ -527,7 +532,7 @@ public class GenerationManager {
             case "REDSTONE" -> Material.REDSTONE_ORE;
             case "LAPIS" -> Material.LAPIS_ORE;
             case "DIAMOND" -> Material.DIAMOND_ORE;
-            case "EMERALD" -> Material.DEEPSLATE_EMERALD_ORE;
+            case "EMERALD" -> Material.EMERALD_ORE;
             case "ANCIENT_DEBRIS" -> Material.ANCIENT_DEBRIS;
             case "NETHER_QUARTZ" -> Material.NETHER_QUARTZ_ORE;
             case "NETHER_GOLD" -> Material.NETHER_GOLD_ORE;
@@ -546,8 +551,8 @@ public class GenerationManager {
      */
     private void generateHollowPlanet(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
         // Configurable shell thickness
-        int shellThickness = plugin.getConfig().getInt("hollow.shell_thickness", 5);
-        
+        int shellThickness = plugin.getConfig().getInt("modifiers.hollow.shellThickness", 5);
+
         // NEW: Get palette for diverse blocks
         com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
 
@@ -562,6 +567,15 @@ public class GenerationManager {
                             int depth = (int)(radius - distance);
                             // NEW: Use palette instead of biome
                             Material material = palette.getMaterialByDepth(depth, random);
+
+                            // INTEGRATE ORES IN SHELL: Generate ores as part of shell structure
+                            if (plugin.getConfig().getBoolean("features.ores.hollowPlanetSpawn", true)) {
+                                Material oreMaterial = tryGenerateOre(cx + x, cy + y, cz + z, distance, radius, biome, random);
+                                if (oreMaterial != null) {
+                                    material = oreMaterial;
+                                }
+                            }
+
                             blocks.add(new BlockPlacement(cx + x, cy + y, cz + z, material));
                         }
                     }

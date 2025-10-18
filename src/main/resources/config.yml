@@ -55,6 +55,7 @@ generation:
 
 # ========================================
 # MADEN (ORE) SİSTEMİ - TAM KONTROL
+# Her biyom için özel ore profilleri!
 # ========================================
 features:
   ores:
@@ -63,9 +64,392 @@ features:
     deepslateVariants: true       # Derinlerde deepslate varyantları
     biomeBonuses: true            # Biyoma özel bonus madenler
     hollowPlanetSpawn: true       # İçi boş gezegenlerde kabukta spawn
-    
+
     # ========================================
-    # MADEN KATMANLARI - HER BİRİ DÜZENLENEBİLİR
+    # BİYOMA ÖZEL ORE PROFİLLERİ
+    # Her biyom kendi ore dağılımına sahip!
+    # ========================================
+    planetTypes:
+      # DÜNYA BENZERİ - Tüm orelar çıkar
+      forest:
+        enabled: true
+        densityMultiplier: 1.0
+        ores:
+          coal:
+            enabled: true
+            chance: 0.35
+            minVein: 3
+            maxVein: 8
+          iron:
+            enabled: true
+            chance: 0.30
+            minVein: 2
+            maxVein: 6
+          copper:
+            enabled: true
+            chance: 0.25
+            minVein: 3
+            maxVein: 9
+          gold:
+            enabled: true
+            chance: 0.12
+            minVein: 2
+            maxVein: 5
+          redstone:
+            enabled: true
+            chance: 0.10
+            minVein: 3
+            maxVein: 7
+          lapis:
+            enabled: true
+            chance: 0.08
+            minVein: 2
+            maxVein: 6
+          diamond:
+            enabled: true
+            chance: 0.04
+            minVein: 1
+            maxVein: 4
+          emerald:
+            enabled: true
+            chance: 0.02
+            minVein: 1
+            maxVein: 2
+
+      # NETHER BENZERİ - Sadece nether scrap ve gold (çok düşük)
+      lava_ocean:
+        enabled: true
+        densityMultiplier: 0.8
+        ores:
+          ancient_debris:
+            enabled: true
+            chance: 0.05
+            minVein: 1
+            maxVein: 3
+          gold:
+            enabled: true
+            chance: 0.15
+            minVein: 2
+            maxVein: 5
+          nether_quartz:
+            enabled: true
+            chance: 0.20
+            minVein: 3
+            maxVein: 7
+
+      magma_caves:
+        enabled: true
+        densityMultiplier: 0.9
+        ores:
+          ancient_debris:
+            enabled: true
+            chance: 0.06
+            minVein: 1
+            maxVein: 3
+          gold:
+            enabled: true
+            chance: 0.18
+            minVein: 2
+            maxVein: 6
+          nether_gold:
+            enabled: true
+            chance: 0.25
+            minVein: 3
+            maxVein: 8
+
+      # KRİSTAL - Sadece emerald, coal, düşük diamond
+      crystal_forest:
+        enabled: true
+        densityMultiplier: 1.2
+        ores:
+          emerald:
+            enabled: true
+            chance: 0.25
+            minVein: 2
+            maxVein: 5
+          diamond:
+            enabled: true
+            chance: 0.08
+            minVein: 1
+            maxVein: 3
+          coal:
+            enabled: true
+            chance: 0.30
+            minVein: 3
+            maxVein: 8
+          amethyst:
+            enabled: true
+            chance: 0.40
+            minVein: 3
+            maxVein: 10
+
+      crystalline:
+        enabled: true
+        densityMultiplier: 1.3
+        ores:
+          emerald:
+            enabled: true
+            chance: 0.30
+            minVein: 2
+            maxVein: 6
+          diamond:
+            enabled: true
+            chance: 0.10
+            minVein: 1
+            maxVein: 4
+          amethyst:
+            enabled: true
+            chance: 0.50
+            minVein: 4
+            maxVein: 12
+
+      # ÖLÜ GEZEGEN - HİÇ ORE ÇIKMA YOK!
+      void:
+        enabled: false
+        densityMultiplier: 0.0
+        ores: {}
+
+      corrupted:
+        enabled: false
+        densityMultiplier: 0.0
+        ores: {}
+
+      # DONMUŞ - Diamond ve lapis ağırlıklı
+      frozen_tundra:
+        enabled: true
+        densityMultiplier: 1.1
+        ores:
+          diamond:
+            enabled: true
+            chance: 0.12
+            minVein: 2
+            maxVein: 5
+          lapis:
+            enabled: true
+            chance: 0.20
+            minVein: 3
+            maxVein: 8
+          iron:
+            enabled: true
+            chance: 0.25
+            minVein: 2
+            maxVein: 6
+          coal:
+            enabled: true
+            chance: 0.30
+            minVein: 3
+            maxVein: 8
+
+      glacier:
+        enabled: true
+        densityMultiplier: 1.0
+        ores:
+          diamond:
+            enabled: true
+            chance: 0.10
+            minVein: 2
+            maxVein: 4
+          lapis:
+            enabled: true
+            chance: 0.18
+            minVein: 3
+            maxVein: 7
+          iron:
+            enabled: true
+            chance: 0.20
+            minVein: 2
+            maxVein: 5
+
+      # ÇÖOL - Gold ve copper ağırlıklı
+      desert:
+        enabled: true
+        densityMultiplier: 1.0
+        ores:
+          gold:
+            enabled: true
+            chance: 0.25
+            minVein: 3
+            maxVein: 7
+          copper:
+            enabled: true
+            chance: 0.30
+            minVein: 4
+            maxVein: 10
+          iron:
+            enabled: true
+            chance: 0.20
+            minVein: 2
+            maxVein: 6
+          coal:
+            enabled: true
+            chance: 0.25
+            minVein: 3
+            maxVein: 8
+
+      badlands:
+        enabled: true
+        densityMultiplier: 1.2
+        ores:
+          gold:
+            enabled: true
+            chance: 0.35
+            minVein: 4
+            maxVein: 9
+          copper:
+            enabled: true
+            chance: 0.35
+            minVein: 4
+            maxVein: 11
+          iron:
+            enabled: true
+            chance: 0.25
+            minVein: 3
+            maxVein: 7
+
+      # ZEHİRLİ - Slime ve glowstone
+      toxic_swamp:
+        enabled: true
+        densityMultiplier: 0.7
+        ores:
+          slime:
+            enabled: true
+            chance: 0.40
+            minVein: 2
+            maxVein: 6
+          glowstone:
+            enabled: true
+            chance: 0.25
+            minVein: 2
+            maxVein: 5
+          copper:
+            enabled: true
+            chance: 0.20
+            minVein: 2
+            maxVein: 5
+
+      toxic:
+        enabled: true
+        densityMultiplier: 0.6
+        ores:
+          slime:
+            enabled: true
+            chance: 0.50
+            minVein: 3
+            maxVein: 8
+          glowstone:
+            enabled: true
+            chance: 0.30
+            minVein: 2
+            maxVein: 6
+
+      # STANDART BİYOMLAR - Dengeli dağılım
+      plains:
+        enabled: true
+        densityMultiplier: 1.0
+        ores:
+          coal:
+            enabled: true
+            chance: 0.30
+            minVein: 3
+            maxVein: 8
+          iron:
+            enabled: true
+            chance: 0.25
+            minVein: 2
+            maxVein: 6
+          copper:
+            enabled: true
+            chance: 0.20
+            minVein: 3
+            maxVein: 7
+          gold:
+            enabled: true
+            chance: 0.10
+            minVein: 2
+            maxVein: 5
+          diamond:
+            enabled: true
+            chance: 0.03
+            minVein: 1
+            maxVein: 3
+
+      jungle:
+        enabled: true
+        densityMultiplier: 1.1
+        ores:
+          coal:
+            enabled: true
+            chance: 0.35
+            minVein: 3
+            maxVein: 9
+          iron:
+            enabled: true
+            chance: 0.28
+            minVein: 2
+            maxVein: 6
+          emerald:
+            enabled: true
+            chance: 0.05
+            minVein: 1
+            maxVein: 2
+          diamond:
+            enabled: true
+            chance: 0.04
+            minVein: 1
+            maxVein: 3
+
+      taiga:
+        enabled: true
+        densityMultiplier: 1.0
+        ores:
+          coal:
+            enabled: true
+            chance: 0.40
+            minVein: 4
+            maxVein: 10
+          iron:
+            enabled: true
+            chance: 0.25
+            minVein: 2
+            maxVein: 6
+          copper:
+            enabled: true
+            chance: 0.15
+            minVein: 2
+            maxVein: 5
+          emerald:
+            enabled: true
+            chance: 0.03
+            minVein: 1
+            maxVein: 2
+
+      # BATANIK - Özel mineraller
+      basaltic:
+        enabled: true
+        densityMultiplier: 0.9
+        ores:
+          netherrack:
+            enabled: true
+            chance: 0.45
+            minVein: 4
+            maxVein: 12
+          obsidian:
+            enabled: true
+            chance: 0.15
+            minVein: 1
+            maxVein: 3
+          gold:
+            enabled: true
+            chance: 0.12
+            minVein: 2
+            maxVein: 5
+
+    # ========================================
+    # NOT: A��a��daki 'layers' sistemi ART IK KULLANILMIYOR!
+    # Bunun yerine yukar�daki 'planetTypes' alt�nda
+    # her biyom i�in �zel ore profilleri tan�mlan�yor.
+    # ========================================
+    # MADEN KATMANLARI - HER BİRİ DÜZENLENEBİLİR (LEGACY - KULLANILMIYOR)
     # ========================================
     layers:
       # YAYGIN MADENLER (Yüzeye yakın)
