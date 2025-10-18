@@ -46,3 +46,4 @@ world_the_end/
 # OS
 .DS_Store
 Thumbs.db
+.env
