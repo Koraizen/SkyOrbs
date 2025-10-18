@@ -1,0 +1,988 @@
+🎯 GENEL YAPI ANALİZİ
+✅ Güçlü Yönler:
+
+Çok İyi Modüler Yapı - Her sistem ayrı paket/class'ta
+28 Farklı Şekil - Muazzam çeşitlilik
+20+ Palet Sistemi - Harika görsel çeşitlilik
+Atmosfer Sistemi - 8 farklı atmosfer tipi
+Modifier Sistemi - Hollow, ore-rich gibi varyasyonlar
+Config-Driven - Her şey config'den ayarlanabilir
+Async Generation - Performans odaklı
+Progress Display - BossBar/ActionBar desteği
+
+
+⚠️ KRİTİK SORUNLAR
+1. ORE GENERATION SORUNU - ÇOK ÖNEMLİ!
+java// OreGenerator.java - Line 54-85
+private static void generateOreType(...) {
+    // PROBLEM: Distance calculation YANLIŞ!
+    double distance;
+    if (isHollow) {
+        distance = shellStart + random.nextDouble() * (shellEnd - shellStart);
+    } else {
+        // BU KISIM YANLIŞ - Ore'lar yüzeyde değil MERKEZE YAKIN olmalı!
+        double minDistance = radius * (1.0 - depthRange[1]); 
+        double maxDistance = radius * (1.0 - depthRange[0]); 
+        distance = minDistance + random.nextDouble() * (maxDistance - minDistance);
+    }
+}
+SORUN: Solid planetlerde ore'lar yüzeyde spawn oluyor, içerde değil!
+ÇÖZÜM:
+java// SOLID PLANET için doğru distance hesabı:
+if (isHollow) {
+    // Hollow - shell içinde
+    distance = shellStart + random.nextDouble() * (shellEnd - shellStart);
+} else {
+    // SOLID - Depth range'e göre MERKEZE YAKIN spawn
+    // depthRange[0] = 0.3 (yüzeye yakın), depthRange[1] = 0.9 (merkeze yakın)
+    // Distance 0 ile radius arasında olmalı, depth'e göre ağırlıklı
+    double normalizedDepth = depthRange[0] + random.nextDouble() * (depthRange[1] - depthRange[0]);
+    distance = radius * (1.0 - normalizedDepth); // Tersine çevir - depth arttıkça distance azalır
+}
+
+2. HOLLOW PLANET SHELL SPAWNING
+java// GenerationManager.java - generateHollowPlanet()
+// PROBLEM: Shell thickness config'den geliyor ama sabit 5 kullanılıyor
+int shellThickness = plugin.getConfig().getInt("hollow.shell_thickness", 5);
+İYİLEŞTİRME:
+java// ConfigManager'a ekle:
+public int getHollowShellThickness() {
+    return plugin.getConfig().getInt("modifiers.hollow.shellThickness", 5);
+}
+
+3. TREE GENERATION GROUND CHECK
+java// TreeGenerator.java - Line 25
+private static int findGroundLevel(...) {
+    // PROBLEM: Raycast doğru ama tree spawn Y hesabı yanlış
+    generateTree(blocks, x, y + 1, z, type, random); // +1 to spawn above ground
+}
+SORUN: Ağaçlar bazen havada kalıyor çünkü ground check doğru çalışmıyor.
+ÇÖZÜM:
+java// Daha sağlam ground check:
+private static int findGroundLevel(int cx, int cy, int cz, int x, int z, int radius, World world) {
+    int searchStartY = cy + radius + 5;
+    int searchEndY = cy - radius;
+
+    for (int y = searchStartY; y >= searchEndY; y--) {
+        Block current = world.getBlockAt(x, y, z);
+        Block above = world.getBlockAt(x, y + 1, z);
+
+        // SOLID block altında, AIR üstünde = ground!
+        if (current.getType().isSolid() && 
+            (above.getType() == Material.AIR || above.getType() == Material.CAVE_AIR)) {
+            
+            // Gezegen yüzeyine yakın mı kontrol et
+            double distFromCenter = Math.sqrt(
+                (x - cx) * (x - cx) +
+                (y - cy) * (y - cy) +
+                (z - cz) * (z - cz)
+            );
+            
+            // Yüzeyde (radius ± 3 blok) olmalı
+            if (Math.abs(distFromCenter - radius) <= 3) {
+                return y;
+            }
+        }
+    }
+    return -1;
+}
+
+4. TREASURE LOOT AMOUNT BUG
+java// TreasureGenerator.java - Line 150+
+// PROBLEM: ItemStack amount 0 olamaz ama random.nextInt() 0 verebilir!
+
+// YANLIŞ:
+loot.add(new ItemStack(Material.NETHERITE_SCRAP, random.nextInt(2)));
+
+// DOĞRU:
+loot.add(new ItemStack(Material.NETHERITE_SCRAP, Math.max(1, random.nextInt(2) + 1)));
+TÜM TREASURE LOOT'LARDA DÜZELTİLMELİ:
+java// Her ItemStack oluşturma yerinde:
+amount: Math.max(1, min + random.nextInt(max - min + 1))
+
+5. DUNGEON LOOT AMOUNT BUG (Aynı Sorun)
+java// DungeonGenerator.java - generateLootItems()
+// AYNI SORUN - amount 0 olabiliyor!
+
+// DÜZELTİLMESİ GEREKEN SATIRLAR:
+loot.add(new ItemStack(Material.DIAMOND, Math.max(1, random.nextInt(3) + 1)));
+loot.add(new ItemStack(Material.EMERALD, Math.max(1, random.nextInt(2) + 1)));
+// VB...
+
+6. PLACEMENT SERVICE LOCATION LEAK
+java// PlacementService.java
+private final Set<String> reservedLocations = new HashSet<>();
+
+// PROBLEM: Location'lar reserve ediliyor ama release edilmiyor!
+public void reserveLocation(int x, int z) {
+    reservedLocations.add(x + "," + z);
+}
+
+public void releaseLocation(int x, int z) {
+    reservedLocations.remove(x + "," + z);
+}
+GenerationManager'da:
+java// SORUN: Exception durumunda release edilmiyor!
+try {
+    placementService.reserveLocation(x, z);
+    // ... generation code ...
+} catch (Exception e) {
+    // BUG: Location release edilmedi!
+    plugin.logError("...", e);
+}
+ÇÖZÜM:
+javatry {
+    placementService.reserveLocation(x, z);
+    // ... generation ...
+} catch (Exception e) {
+    plugin.logError("...", e);
+} finally {
+    // HER ZAMAN RELEASE ET!
+    placementService.releaseLocation(x, z);
+}
+
+7. ATMOSPHERIC EFFECTS NULL CHECK
+java// PlanetAtmosphereManager.java - Line 75
+AtmosphereType atmosphere = planetAtmospheres.get(nearestPlanet.getId());
+if (atmosphere != null) {
+    applyAtmosphereEffects(player, nearestPlanet, atmosphere);
+}
+
+// SORUN: atmosphere null olabilir ama default CLEAR olmalı!
+
+// ÇÖZÜM:
+AtmosphereType atmosphere = planetAtmospheres.getOrDefault(
+    nearestPlanet.getId(), 
+    AtmosphereType.CLEAR
+);
+applyAtmosphereEffects(player, nearestPlanet, atmosphere);
+
+8. THREE.JS VERSION WARNING
+java// SkyOrbs.java comments:
+// IMPORTANT: Do NOT use THREE.CapsuleGeometry as it was introduced in r142.
+SORUN: Plugin THREE.js kullanmıyor ama comment var - kafa karıştırıcı!
+ÇÖZÜM: Bu comment'i sil - React artifacts için ama bu Bukkit plugin'i!
+
+🔧 PERFORMANS İYİLEŞTİRMELERİ
+1. BATCH PLACEMENT OPTIMIZATION
+java// GenerationManager.java - placeBlocksInBatches()
+// İYİLEŞTİRME: Chunk loading optimize edilebilir
+
+// ŞUAN:
+for (ChunkPos pos : chunksToLoad) {
+    if (!world.isChunkLoaded(pos.x, pos.z)) {
+        world.loadChunk(pos.x, pos.z, false);
+    }
+}
+
+// DAHA İYİ:
+List<CompletableFuture<Chunk>> chunkFutures = new ArrayList<>();
+for (ChunkPos pos : chunksToLoad) {
+    if (!world.isChunkLoaded(pos.x, pos.z)) {
+        chunkFutures.add(world.getChunkAtAsync(pos.x, pos.z));
+    }
+}
+// Tüm chunk'ların yüklenmesini bekle
+CompletableFuture.allOf(chunkFutures.toArray(new CompletableFuture[0])).join();
+
+2. ORE GENERATION OPTIMIZATION
+java// OreGenerator.java
+// PROBLEM: Her vein için random position hesaplanıyor - yavaş!
+
+// İYİLEŞTİRME: Vein position'larını pre-calculate et:
+List<VeinPosition> veinPositions = new ArrayList<>();
+for (int i = 0; i < veinCount; i++) {
+    veinPositions.add(calculateVeinPosition(...));
+}
+
+// Sonra batch olarak place et
+for (VeinPosition pos : veinPositions) {
+    generateVein(ores, pos.x, pos.y, pos.z, ...);
+}
+
+📝 CODE QUALITY İYİLEŞTİRMELERİ
+1. MAGIC NUMBERS
+java// Çok fazla magic number var!
+
+// KÖTÜ:
+if (distance <= radius * 1.5) { ... }
+if (orb.getCoreLevel() >= 3) { ... }
+
+// İYİ (Constants.java'ya ekle):
+public static final double ATMOSPHERE_RADIUS_MULTIPLIER = 1.5;
+public static final int MIN_CORE_LEVEL_FOR_ATMOSPHERE = 3;
+
+2. REPEATED CODE
+java// BiomeType, AtmosphereType, PlanetModifier'da tekrar eden pattern:
+
+// HER ENUM'DA AYNI KOD:
+public static TYPE getRandomType(Random random) {
+    double totalWeight = 0.0;
+    for (TYPE type : values()) {
+        totalWeight += type.getProbability();
+    }
+    // ...
+}
+
+// ÇÖZÜM: Generic utility method:
+public class WeightedRandom {
+    public static <T extends Weighted> T select(T[] values, Random random) {
+        // ...
+    }
+}
+
+3. ERROR HANDLING
+java// DatabaseManager.java - Çok fazla catch block var
+
+// KÖTÜ:
+try {
+    // ...
+} catch (SQLException e) {
+    sender.sendMessage("§cVeritabanı hatası!");
+}
+
+// İYİ:
+try {
+    // ...
+} catch (SQLException e) {
+    plugin.logError("Database error in getAllOrbs()", e);
+    sender.sendMessage(plugin.getConfigManager().getMessage("databaseError"));
+}
+
+🎨 FEATURE İYİLEŞTİRME ÖNERİLERİ
+1. HOLLOW PLANET INTERIOR STRUCTURES
+Harika fikir ama şu eklenmeli:
+java// GenerationManager.java - generateInteriorStructures()
+// ÖNERI: Yapılar arası mesafe kontrolü
+
+private void generateInteriorStructures(...) {
+    List<Location> structureLocations = new ArrayList<>();
+    
+    for (int i = 0; i < structureCount; i++) {
+        Location newLoc = calculateStructureLocation(...);
+        
+        // MESAFE KONTROLÜ - Üst üste binmesin!
+        boolean tooClose = false;
+        for (Location existing : structureLocations) {
+            if (newLoc.distance(existing) < 20) {
+                tooClose = true;
+                break;
+            }
+        }
+        
+        if (!tooClose) {
+            generateInteriorStructure(blocks, newLoc.x, newLoc.y, newLoc.z, biome, random);
+            structureLocations.add(newLoc);
+        }
+    }
+}
+
+2. PALETTE SYSTEM MATERIAL CACHING
+java// PlanetPalette.java - getMaterialByDepth()
+// PROBLEM: Her çağrıda random seçim yapılıyor - tutarsız!
+
+// İYİLEŞTİRME: Material cache ekle:
+private final Map<Integer, Material> materialCache = new HashMap<>();
+
+public Material getMaterialByDepth(int depth, Random random) {
+    return materialCache.computeIfAbsent(depth, d -> {
+        // ... selection logic ...
+    });
+}
+
+3. ATMOSPHERE PARTICLE OPTIMIZATION
+java// PlanetAtmosphereManager.java - spawnAtmosphereParticles()
+// PROBLEM: Her saniye 5 parçacık = yüksek load!
+
+// İYİLEŞTİRME: Distance-based spawning:
+private void spawnAtmosphereParticles(Player player, AtmosphereType atmosphere) {
+    Location loc = player.getLocation();
+    World world = loc.getWorld();
+    Random random = new Random();
+    
+    // Oyuncu sayısına göre particle count ayarla
+    int playerCount = world.getPlayers().size();
+    int particleCount = Math.max(2, 5 - playerCount); // Çok oyuncu varsa azalt
+    
+    for (int i = 0; i < particleCount; i++) {
+        // ...
+    }
+}
+
+📊 TEST COVERAGE EKLENMELİ
+java// EKSİK TESTLER:
+
+// 1. OreGenerator Test
+@Test
+public void testOreSpawningInSolidPlanet() {
+    // Ore'ların içerde spawn olduğunu doğrula
+}
+
+@Test
+public void testOreSpawningInHollowPlanet() {
+    // Shell içinde spawn olduğunu doğrula
+}
+
+// 2. TreeGenerator Test
+@Test
+public void testTreeGroundCheck() {
+    // Ağaçların yerde spawn olduğunu doğrula
+}
+
+// 3. TreasureGenerator Test
+@Test
+public void testLootAmountNeverZero() {
+    // ItemStack amount'ın asla 0 olmadığını doğrula
+}
+
+🔒 GÜVENLİK İYİLEŞTİRMELERİ
+1. SQL INJECTION PREVENTİON
+java// DatabaseManager.java - Güvenli ama iyileştirilebilir
+
+// PreparedStatement kullanılıyor - İYİ! ✅
+// Ama transaction yönetimi eksik:
+
+public void saveOrb(Orb orb) throws SQLException {
+    connection.setAutoCommit(false); // Transaction başlat
+    try {
+        // ... save operations ...
+        connection.commit(); // Başarılı - commit
+    } catch (SQLException e) {
+        connection.rollback(); // Hata - geri al
+        throw e;
+    } finally {
+        connection.setAutoCommit(true);
+    }
+}
+
+2. PLAYER INPUT VALIDATION
+java// GezegenCommand.java - handleTeleport()
+// PROBLEM: Gezegen ismi validasyonu yok!
+
+// EKLE:
+if (name.length() > Constants.MAX_PLANET_NAME_LENGTH) {
+    sender.sendMessage("§cGezegen ismi çok uzun!");
+    return;
+}
+
+if (!name.matches(Constants.PLANET_NAME_PATTERN)) {
+    sender.sendMessage("§cGeçersiz karakterler!");
+    return;
+}
+
+📦 CONFIG İYİLEŞTİRMELERİ
+1. VALIDATOR EKLE
+java// ConfigManager.java - validateConfig()
+// Daha kapsamlı validation ekle:
+
+public void validateConfig() {
+    List<String> errors = new ArrayList<>();
+    
+    // Radius checks
+    if (getMinRadius() >= getMaxRadius()) {
+        errors.add("minRadius must be < maxRadius");
+    }
+    
+    // Performance checks
+    if (getBlocksPerBatch() > 2000) {
+        errors.add("blocksPerBatch too high - may cause lag");
+    }
+    
+    // Shell thickness check
+    if (getShellThickness() < 3 || getShellThickness() > 15) {
+        errors.add("shellThickness should be 3-15");
+    }
+    
+    // Log all errors
+    if (!errors.isEmpty()) {
+        plugin.logWarning("Config validation errors:");
+        errors.forEach(plugin::logWarning);
+    }
+}
+
+🎯 ÖNCELİK SIRASI
+🔴 CRITICAL - HEMEN DÜZELTİLMELİ:
+
+Ore Generation Distance Bug - Ore'lar yanlış yerde!
+ItemStack Amount Bug - Game crash riski!
+Location Release Leak - Memory leak!
+
+🟡 IMPORTANT - BİR SONRAKI UPDATE:
+
+Tree Ground Check
+Atmosphere Null Check
+PlacementService Finally Block
+
+🟢 NICE TO HAVE - FUTURE:
+
+Performance Optimizations
+Code Quality Improvements
+Test Coverage
+
+
+💬 SONUÇ
+Genel Değerlendirme: 8.5/10
+Güçlü Yönler:
+
+✅ Muhteşem feature set
+✅ Modüler architecture
+✅ Config-driven design
+✅ Async generation
+
+Zayıf Yönler:
+
+❌ Ore generation bug (CRITICAL!)
+❌ Loot amount bug (CRITICAL!)
+❌ Memory leak riski
+❌ Test coverage düşük
+
+
+Hangi sorunları öncelikli olarak düzeltmemi istersin? Critical bug'ları tek tek ele alabiliriz!RetryClaude does not have the ability to run the code it generates yet.Kinceledikten sonra Gezegenler sadece sphere şeklinde oluşuyor ve içi dolu gezegenlerde ore oluşmuyor ve config düzenlemesi kesinlikle plugine etki etmiyor confige ne yazsam gezegenler hala aynı generate oluyor🔴 KRİTİK SORUN ANALİZİ
+Söylediğin 3 büyük sorunu tespit ettim. Hepsini düzeltelim:
+
+1. ⚠️ SADECE SPHERE OLUŞUYOR SORUNU
+Sorun Kökü:
+java// GenerationManager.java - Line 85
+PlanetShape shape = plugin.getShapeRegistry().getRandomShape(
+    plugin.getConfigManager().getShapeWeights()
+);
+PROBLEM: getShapeWeights() config'den okuyor ama config'de yanlış path!
+Kontrol Et:
+java// ConfigManager.java - Line 89
+public Map<String, Double> getShapeWeights() {
+    Map<String, Double> weights = new HashMap<>();
+    ConfigurationSection section = plugin.getConfig().getConfigurationSection("shapes.weights");
+    // ^^^ BU PATH YANLIŞ! Config'de "generation.shapes.weights" olmalı!
+    
+    if (section != null) {
+        for (String key : section.getKeys(false)) {
+            weights.put(key, section.getDouble(key));
+        }
+    }
+    return weights;
+}
+✅ DÜZELTİLMİŞ HALİ:
+java// ConfigManager.java - getShapeWeights()
+public Map<String, Double> getShapeWeights() {
+    Map<String, Double> weights = new HashMap<>();
+    
+    // DOĞRU PATH!
+    ConfigurationSection section = plugin.getConfig().getConfigurationSection("generation.shapes.weights");
+    
+    if (section != null) {
+        for (String key : section.getKeys(false)) {
+            weights.put(key, section.getDouble(key));
+        }
+    } else {
+        // Config yoksa DEFAULT WEIGHTS!
+        plugin.logWarning("Shape weights not found in config! Using defaults.");
+        weights.put("SPHERE", 5.0);
+        weights.put("HEMISPHERE", 8.0);
+        weights.put("BLOB", 10.0);
+        weights.put("ELLIPSOID", 8.0);
+        weights.put("ASTEROID", 7.0);
+        // ... diğerleri
+    }
+    
+    plugin.logDebug("shapes", "Loaded " + weights.size() + " shape weights");
+    return weights;
+}
+Test Ekleme:
+java// SkyOrbs.java - onEnable() içinde
+logInfo("Shape Weights:");
+getShapeWeights().forEach((shape, weight) -> 
+    logInfo("  • " + shape + ": " + weight)
+);
+
+2. ⚠️ ORE OLUŞMUYOR SORUNU (SOLID PLANETS)
+Sorun Kökü:
+java// OreGenerator.java - Line 54-85
+private static void generateOreType(...) {
+    // SOLID PLANET:
+    if (isHollow) {
+        distance = shellStart + random.nextDouble() * (shellEnd - shellStart);
+    } else {
+        // BU KISIM TAMAMEN YANLIŞ!
+        double minDistance = radius * (1.0 - depthRange[1]); 
+        double maxDistance = radius * (1.0 - depthRange[0]); 
+        distance = minDistance + random.nextDouble() * (maxDistance - minDistance);
+    }
+}
+```
+
+**PROBLEM ANALİZİ:**
+```
+depthRange[0] = 0.3 (yüzeye yakın)
+depthRange[1] = 0.9 (merkeze yakın)
+
+Şuanki kod:
+minDistance = 150 * (1.0 - 0.9) = 15  (merkeze yakın)
+maxDistance = 150 * (1.0 - 0.3) = 105 (yüzeye yakın)
+
+distance = 15 + random * 90 = 15-105 arası
+
+SORUN: Bu hesaplama doğru ama MERKEZ KONTROLÜ YOK!
+Ore'lar spawn ediliyor ama gezegen içinde değil!
+✅ TAM DÜZELTİLMİŞ KOD:
+java// OreGenerator.java - generateOreType() metodunu TAM DEĞİŞTİR:
+
+private static void generateOreType(List<BlockData> ores, OreConfig ore,
+                                    int cx, int cy, int cz, int radius,
+                                    double shellStart, double shellEnd,
+                                    BiomeType biome, Random random, double[] depthRange,
+                                    boolean isHollow) {
+
+    // Volume calculation
+    double volume;
+    if (isHollow) {
+        volume = (4.0/3.0) * Math.PI * (Math.pow(shellEnd, 3) - Math.pow(shellStart, 3));
+    } else {
+        volume = (4.0/3.0) * Math.PI * Math.pow(radius, 3);
+    }
+
+    // DAHA FAZLA ORE!
+    int veinCount = (int)(volume * ore.chance * 0.002); // 2x artırıldı!
+    veinCount = Math.max(10, veinCount); // Minimum 10 vein
+
+    SkyOrbs.getInstance().logDebug("ore", String.format(
+        "Generating %s: %d veins (volume=%.0f, chance=%.3f)",
+        ore.type.name(), veinCount, volume, ore.chance
+    ));
+
+    for (int i = 0; i < veinCount; i++) {
+        // RASTGELE POZİSYON OLUŞTUR
+        double angle1 = random.nextDouble() * Math.PI * 2;
+        double angle2 = random.nextDouble() * Math.PI;
+
+        // DISTANCE HESAPLAMA - TAMİR EDİLDİ!
+        double distance;
+        
+        if (isHollow) {
+            // HOLLOW: Shell içinde spawn
+            distance = shellStart + random.nextDouble() * (shellEnd - shellStart);
+        } else {
+            // SOLID: Depth range'e göre spawn
+            // depthRange[0] = 0.3 (30% depth = yüzeye yakın)
+            // depthRange[1] = 0.9 (90% depth = merkeze çok yakın)
+            
+            // Random depth seç
+            double depth = depthRange[0] + random.nextDouble() * (depthRange[1] - depthRange[0]);
+            
+            // Distance = radius'tan içeri
+            // depth 0.3 ise -> distance = radius * 0.7 (yüzeye yakın)
+            // depth 0.9 ise -> distance = radius * 0.1 (merkeze çok yakın)
+            distance = radius * (1.0 - depth);
+        }
+
+        // SPHERICAL COORDINATES ile 3D position hesapla
+        int x = cx + (int)(Math.sin(angle2) * Math.cos(angle1) * distance);
+        int y = cy + (int)(Math.cos(angle2) * distance);
+        int z = cz + (int)(Math.sin(angle2) * Math.sin(angle1) * distance);
+
+        // DOĞRULAMA - Pozisyon geçerli mi?
+        double actualDistance = Math.sqrt(
+            (x-cx)*(x-cx) + (y-cy)*(y-cy) + (z-cz)*(z-cz)
+        );
+
+        boolean validPosition = false;
+        
+        if (isHollow) {
+            // Hollow: Shell içinde mi?
+            validPosition = (actualDistance >= shellStart - 1 && actualDistance <= shellEnd + 1);
+        } else {
+            // Solid: Gezegen içinde mi?
+            validPosition = (actualDistance <= radius - 2); // 2 blok içerde
+        }
+
+        if (validPosition) {
+            // VEİN OLUŞTUR!
+            generateVein(ores, x, y, z, ore, random, cx, cy, cz, radius, shellStart, shellEnd, isHollow);
+            
+            SkyOrbs.getInstance().logDebug("ore", String.format(
+                "Spawned %s vein at (%d,%d,%d) distance=%.1f",
+                ore.type.name(), x, y, z, actualDistance
+            ));
+        } else {
+            SkyOrbs.getInstance().logDebug("ore", String.format(
+                "INVALID position for %s at (%d,%d,%d) distance=%.1f (expected: %.1f-%.1f)",
+                ore.type.name(), x, y, z, actualDistance, 
+                isHollow ? shellStart : 0, 
+                isHollow ? shellEnd : radius
+            ));
+        }
+    }
+}
+VEİN GENERATION DE DÜZELTİLMELİ:
+java// OreGenerator.java - generateVein() metodu:
+
+private static void generateVein(List<BlockData> ores, int startX, int startY, int startZ,
+                                 OreConfig ore, Random random, int cx, int cy, int cz,
+                                 int radius, double shellStart, double shellEnd, boolean isHollow) {
+
+    int veinSize = ore.veinSize[0] + random.nextInt(ore.veinSize[1] - ore.veinSize[0] + 1);
+
+    for (int i = 0; i < veinSize; i++) {
+        // Vein spread
+        int offsetX = random.nextInt(3) - 1;
+        int offsetY = random.nextInt(3) - 1;
+        int offsetZ = random.nextInt(3) - 1;
+
+        int x = startX + offsetX;
+        int y = startY + offsetY;
+        int z = startZ + offsetZ;
+
+        // Her blok için distance check
+        double distance = Math.sqrt((x-cx)*(x-cx) + (y-cy)*(y-cy) + (z-cz)*(z-cz));
+
+        boolean valid = false;
+        if (isHollow) {
+            valid = (distance >= shellStart && distance <= shellEnd);
+        } else {
+            valid = (distance <= radius - 1);
+        }
+
+        if (!valid) continue;
+
+        // Deepslate variant seçimi
+        Material material = ore.type;
+        double depthRatio = distance / radius;
+        
+        // Merkeze yakınsa deepslate
+        if (depthRatio < 0.4 && ore.deepslateVariant != null) {
+            material = ore.deepslateVariant;
+        }
+
+        ores.add(new BlockData(x, y, z, material));
+    }
+}
+
+3. ⚠️ CONFIG DEĞİŞİKLİKLERİ ETKİ ETMİYOR
+Sorun Kökü:
+java// ConfigManager.java - Constructor
+public ConfigManager(SkyOrbs plugin) {
+    this.plugin = plugin;
+    // SORUN: Config burada okunuyor ama plugin henüz saveDefaultConfig() çağırmamış!
+}
+Ana Sorun:
+java// SkyOrbs.java - onEnable()
+saveDefaultConfig(); // Config dosyası oluştur
+
+// SONRA:
+configManager = new ConfigManager(this); // Config oku
+BU DOĞRU! Ama config cache'leniyor ve reload çalışmıyor!
+✅ TAM DÜZELTİLMİŞ CONFIG SİSTEMİ:
+java// ConfigManager.java - TAM YENİDEN YAZ:
+
+public class ConfigManager {
+    
+    private final SkyOrbs plugin;
+    
+    // CACHE'LER - reload'da temizlenecek
+    private Map<String, Double> shapeWeightsCache = null;
+    
+    public ConfigManager(SkyOrbs plugin) {
+        this.plugin = plugin;
+        validateConfig(); // İlk yüklemede validate et
+    }
+    
+    /**
+     * Config'i yeniden yükle ve cache'leri temizle
+     */
+    public void reload() {
+        plugin.reloadConfig();
+        clearCaches();
+        validateConfig();
+        plugin.logInfo("Config reloaded and validated!");
+    }
+    
+    /**
+     * Tüm cache'leri temizle
+     */
+    private void clearCaches() {
+        shapeWeightsCache = null;
+        // Diğer cache'ler buraya eklenecek
+        plugin.logDebug("config", "Cleared all config caches");
+    }
+    
+    /**
+     * Shape weights - CACHED
+     */
+    public Map<String, Double> getShapeWeights() {
+        if (shapeWeightsCache != null) {
+            return new HashMap<>(shapeWeightsCache); // Defensive copy
+        }
+        
+        Map<String, Double> weights = new HashMap<>();
+        
+        // DOĞRU PATH!
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("generation.shapes.weights");
+        
+        if (section != null) {
+            for (String key : section.getKeys(false)) {
+                double weight = section.getDouble(key);
+                weights.put(key.toUpperCase(), weight); // Uppercase'e çevir!
+                plugin.logDebug("shapes", "Loaded shape: " + key + " = " + weight);
+            }
+        }
+        
+        // Config boşsa defaults
+        if (weights.isEmpty()) {
+            plugin.logWarning("No shape weights found in config! Using defaults.");
+            weights = getDefaultShapeWeights();
+        }
+        
+        shapeWeightsCache = weights;
+        plugin.logInfo("Loaded " + weights.size() + " shape weights from config");
+        return new HashMap<>(weights);
+    }
+    
+    /**
+     * Default shape weights
+     */
+    private Map<String, Double> getDefaultShapeWeights() {
+        Map<String, Double> defaults = new HashMap<>();
+        defaults.put("SPHERE", 5.0);
+        defaults.put("HEMISPHERE", 8.0);
+        defaults.put("BLOB", 10.0);
+        defaults.put("ELLIPSOID", 8.0);
+        defaults.put("ASTEROID", 7.0);
+        defaults.put("TORUS", 4.0);
+        defaults.put("RING", 3.0);
+        defaults.put("CYLINDER", 5.0);
+        defaults.put("CONE", 6.0);
+        defaults.put("DIAMOND", 5.0);
+        defaults.put("CUBE", 4.0);
+        defaults.put("PYRAMID", 4.0);
+        defaults.put("OCTAHEDRON", 3.0);
+        defaults.put("FRACTAL", 6.0);
+        defaults.put("SPIKY", 5.0);
+        defaults.put("COMET", 3.0);
+        defaults.put("CRESCENT", 4.0);
+        defaults.put("HYBRID", 2.0);
+        defaults.put("LAYERED", 7.0);
+        defaults.put("CRATERED", 8.0);
+        defaults.put("HONEYCOMB", 5.0);
+        defaults.put("SPIRAL", 6.0);
+        defaults.put("WAVE", 7.0);
+        defaults.put("CRYSTAL", 6.0);
+        defaults.put("ORGANIC", 8.0);
+        defaults.put("GEOMETRIC", 5.0);
+        defaults.put("NEBULA", 4.0);
+        defaults.put("ASTEROID_FIELD", 6.0);
+        return defaults;
+    }
+    
+    /**
+     * Config'i validate et ve log'la
+     */
+    public void validateConfig() {
+        List<String> issues = new ArrayList<>();
+        
+        // 1. Radius kontrolü
+        int minRadius = getMinRadius();
+        int maxRadius = getMaxRadius();
+        if (minRadius >= maxRadius) {
+            issues.add("minRadius (" + minRadius + ") >= maxRadius (" + maxRadius + ")");
+        }
+        
+        // 2. Shape weights kontrolü
+        Map<String, Double> weights = getShapeWeights();
+        if (weights.isEmpty()) {
+            issues.add("No shape weights defined!");
+        }
+        
+        // 3. Performance ayarları
+        int blocksPerBatch = getBlocksPerBatch();
+        if (blocksPerBatch > 2000) {
+            issues.add("blocksPerBatch (" + blocksPerBatch + ") too high - may cause lag");
+        }
+        
+        // 4. Shell thickness
+        int shellThickness = getShellThickness();
+        if (shellThickness < 3 || shellThickness > 15) {
+            issues.add("shellThickness (" + shellThickness + ") should be 3-15");
+        }
+        
+        // Issues varsa log'la
+        if (!issues.isEmpty()) {
+            plugin.logWarning("========================================");
+            plugin.logWarning("CONFIG VALIDATION ISSUES:");
+            for (String issue : issues) {
+                plugin.logWarning("  ⚠ " + issue);
+            }
+            plugin.logWarning("========================================");
+        } else {
+            plugin.logSuccess("Config validation passed!");
+        }
+        
+        // Debug: Config değerlerini göster
+        if (isDebugEnabled()) {
+            plugin.logDebug("config", "========================================");
+            plugin.logDebug("config", "LOADED CONFIG VALUES:");
+            plugin.logDebug("config", "  • minRadius: " + minRadius);
+            plugin.logDebug("config", "  • maxRadius: " + maxRadius);
+            plugin.logDebug("config", "  • blocksPerBatch: " + blocksPerBatch);
+            plugin.logDebug("config", "  • shellThickness: " + shellThickness);
+            plugin.logDebug("config", "  • asyncGeneration: " + isAsyncGenerationEnabled());
+            plugin.logDebug("config", "  • oreGeneration: " + isOreGenerationEnabled());
+            plugin.logDebug("config", "  • treeGeneration: " + isTreeGenerationEnabled());
+            plugin.logDebug("config", "  • Shape weights: " + weights.size() + " loaded");
+            plugin.logDebug("config", "========================================");
+        }
+    }
+    
+    // ... diğer metodlar aynı ...
+}
+RELOAD KOMUTUNU DÜZELTİLMİŞ:
+java// SkyOrbs.java
+public void reloadPluginConfig() {
+    try {
+        // 1. Config dosyasını yeniden yükle
+        reloadConfig();
+        
+        // 2. ConfigManager'ı yeniden oluştur
+        configManager = new ConfigManager(this);
+        
+        // 3. Validate et
+        configManager.validateConfig();
+        
+        logSuccess("========================================");
+        logSuccess("CONFIG RELOADED SUCCESSFULLY!");
+        logSuccess("========================================");
+        
+    } catch (Exception e) {
+        logError("Failed to reload config!", e);
+    }
+}
+KOMUT HANDLER'I DÜZELTİLMİŞ:
+java// GezegenCommand.java - handleReload()
+private void handleReload(CommandSender sender) {
+    if (!sender.hasPermission("skyorbs.admin")) {
+        sender.sendMessage(plugin.getConfigManager().getMessage("noPermission"));
+        return;
+    }
+    
+    sender.sendMessage("§eConfig yeniden yükleniyor...");
+    
+    try {
+        plugin.reloadPluginConfig();
+        sender.sendMessage(plugin.getConfigManager().getMessage("configReloaded"));
+        
+        // Debug: Shape weights'i göster
+        Map<String, Double> weights = plugin.getConfigManager().getShapeWeights();
+        sender.sendMessage("§aYüklenen şekil sayısı: §e" + weights.size());
+        
+    } catch (Exception e) {
+        sender.sendMessage("§cConfig yüklenemedi! Konsolu kontrol edin.");
+        plugin.logError("Config reload failed", e);
+    }
+}
+
+🧪 TEST KOMUTU EKLE
+java// GezegenCommand.java - onCommand() içine ekle:
+
+case "test", "debug" -> handleTest(sender);
+java// GezegenCommand.java - Yeni metod:
+
+private void handleTest(CommandSender sender) {
+    if (!sender.hasPermission("skyorbs.admin")) {
+        sender.sendMessage("§cYetkiniz yok!");
+        return;
+    }
+    
+    sender.sendMessage("§b========================================");
+    sender.sendMessage("§b§lSYSTEM TEST REPORT");
+    sender.sendMessage("§b========================================");
+    
+    // 1. Config Test
+    sender.sendMessage("§e1. CONFIG TEST:");
+    sender.sendMessage("  • minRadius: §a" + plugin.getConfigManager().getMinRadius());
+    sender.sendMessage("  • maxRadius: §a" + plugin.getConfigManager().getMaxRadius());
+    sender.sendMessage("  • blocksPerBatch: §a" + plugin.getConfigManager().getBlocksPerBatch());
+    
+    // 2. Shape Registry Test
+    sender.sendMessage("§e2. SHAPE REGISTRY TEST:");
+    sender.sendMessage("  • Registered shapes: §a" + plugin.getShapeRegistry().getShapeCount());
+    
+    Map<String, Double> weights = plugin.getConfigManager().getShapeWeights();
+    sender.sendMessage("  • Loaded weights: §a" + weights.size());
+    sender.sendMessage("§7  Shapes:");
+    weights.forEach((shape, weight) -> 
+        sender.sendMessage("    §8• §f" + shape + " §7: §e" + weight)
+    );
+    
+    // 3. Feature Test
+    sender.sendMessage("§e3. FEATURE TEST:");
+    sender.sendMessage("  • Ore Generation: " + 
+        (plugin.getConfigManager().isOreGenerationEnabled() ? "§aEnabled" : "§cDisabled"));
+    sender.sendMessage("  • Tree Generation: " + 
+        (plugin.getConfigManager().isTreeGenerationEnabled() ? "§aEnabled" : "§cDisabled"));
+    sender.sendMessage("  • Asteroids: " + 
+        (plugin.getConfigManager().isAsteroidsEnabled() ? "§aEnabled" : "§cDisabled"));
+    
+    // 4. Database Test
+    sender.sendMessage("§e4. DATABASE TEST:");
+    try {
+        List<Orb> orbs = plugin.getDatabaseManager().getAllOrbs();
+        sender.sendMessage("  • Total planets: §a" + orbs.size());
+    } catch (Exception e) {
+        sender.sendMessage("  §c✗ Database error: " + e.getMessage());
+    }
+    
+    sender.sendMessage("§b========================================");
+}
+
+📝 DEBUG LOGGING EKLE
+java// SkyOrbs.java - onEnable() içinde shape registry'den sonra:
+
+logInfo("========================================");
+logInfo("SHAPE CONFIGURATION:");
+logInfo("========================================");
+
+Map<String, Double> weights = configManager.getShapeWeights();
+if (weights.isEmpty()) {
+    logWarning("⚠ NO SHAPE WEIGHTS LOADED!");
+} else {
+    logSuccess("✓ Loaded " + weights.size() + " shape weights:");
+    weights.entrySet().stream()
+        .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+        .forEach(entry -> 
+            logInfo("  • " + entry.getKey() + " = " + entry.getValue())
+        );
+}
+
+logInfo("========================================");
+java// GenerationManager.java - createPlanetAsync() içinde:
+
+// Shape seçiminden SONRA:
+PlanetShape shape = plugin.getShapeRegistry().getRandomShape(
+    plugin.getConfigManager().getShapeWeights()
+);
+
+plugin.logInfo("Selected shape: " + shape.getName() + " (" + shape.getDisplayName() + ")");
+plugin.logDebug("generation", "Shape deformation factor: " + shape.getDeformationFactor());
+
+✅ SON KONTROL LİSTESİ
+Şimdi şunları yap:
+1. Config Path'i Düzelt:
+
+✅ ConfigManager.getShapeWeights() metodunda path'i "generation.shapes.weights" yap
+
+2. Ore Generation'ı Düzelt:
+
+✅ OreGenerator.generateOreType() metodunu TAM değiştir (yukarıdaki kod)
+✅ OreGenerator.generateVein() metodunu TAM değiştir (yukarıdaki kod)
+
+3. Config Reload'u Düzelt:
+
+✅ ConfigManager class'ını TAM değiştir (cache + reload)
+✅ SkyOrbs.reloadPluginConfig() metodunu düzelt
+
+4. Test Komutunu Ekle:
+
+✅ GezegenCommand class'ına handleTest() metodu ekle
+
+5. Debug Logging Ekle:
+
+✅ SkyOrbs.onEnable() içine shape logging ekle
+✅ GenerationManager.createPlanetAsync() içine shape selection logging ekle

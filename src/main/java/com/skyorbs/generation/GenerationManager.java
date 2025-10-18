@@ -42,10 +42,11 @@ public class GenerationManager {
         player.sendMessage("§eGezegen oluşturuluyor...");
 
         executor.submit(() -> {
+            PlacementService.PlacementResult placement = null;
             try {
                 List<Orb> existingOrbs = plugin.getDatabaseManager().getAllOrbs();
                 int radius = sizeCalculator.calculateRadius("RANDOM");
-                PlacementService.PlacementResult placement = placementService.findPlacement(radius, existingOrbs);
+                placement = placementService.findPlacement(radius, existingOrbs);
 
                 if (!placement.isSuccess()) {
                     Bukkit.getScheduler().runTask(plugin, () ->
@@ -54,7 +55,6 @@ public class GenerationManager {
                     return;
                 }
 
-                // LOCATION RESERVE - Başka gezegen aynı yere oluşmasın
                 // LOCATION RESERVE - Başka gezegen aynı yere oluşmasın
                 placementService.reserveLocation(placement.getX(), placement.getZ());
 
@@ -108,9 +108,6 @@ public class GenerationManager {
                     player.sendMessage("§aGezegen yüzeyine ışınlandınız! Oluşturma devam ediyor...");
                     player.sendMessage("§eİlk bloklar yerleştiriliyor... (Yukarıdan aşağıya)");
                 });
-
-                // LOCATION RESERVE - ÖNEMLİ: Başka gezegen aynı yere oluşmasın
-                placementService.reserveLocation(placement.getX(), placement.getZ());
 
                 // Progress tracking için toplam adım sayısı
                 final int[] progress = {0};
@@ -285,25 +282,23 @@ public class GenerationManager {
                             player.sendMessage(String.format("§aKonum: §f%d, %d, %d §7| Yarıçap: §f%d",
                                 orb.getCenterX(), orb.getCenterY(), orb.getCenterZ(), orb.getRadius()
                             ));
-
-                            // LOCATION RELEASE - İşlem TAMAMEN bittiğinde serbest bırak
-                            placementService.releaseLocation(placement.getX(), placement.getZ());
-                        }, 5L); // Çok daha erken
+                        }, 5L);
 
                     } catch (Exception e) {
                         plugin.logError("Asteroid/satellite hatası", e);
                     }
                 });
 
-                // LOCATION RELEASE - İşlem tamamlandıktan sonra serbest bırak
-                // LOCATION RELEASE - Hata durumunda da serbest bırak
-                placementService.releaseLocation(placement.getX(), placement.getZ());
-
             } catch (Exception e) {
                 plugin.logError("Gezegen oluşturma hatası", e);
                 Bukkit.getScheduler().runTask(plugin, () ->
                     player.sendMessage("§cHata: " + e.getMessage())
                 );
+            } finally {
+                // FIXED: Always release location, even on error - prevents memory leak!
+                if (placement != null && placement.isSuccess()) {
+                    placementService.releaseLocation(placement.getX(), placement.getZ());
+                }
             }
         });
     }
