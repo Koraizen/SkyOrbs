@@ -20,17 +20,25 @@ public class OreGenerator {
         int cz = orb.getCenterZ();
         int radius = orb.getRadius();
 
+        // Determine if planet is hollow
+        boolean isHollow = orb.isHollow();
+
+        // Calculate shell boundaries for hollow planets
+        double innerRadius = isHollow ? radius * 0.6 : 0; // 60% hollow interior
+        double shellStart = innerRadius;
+        double shellEnd = radius - 1; // Leave surface layer intact
+
         // Configurable ore layers per biome
         List<OreLayer> layers = getOreLayersForBiome(biome);
 
         for (OreLayer layer : layers) {
             for (OreConfig ore : layer.ores) {
-                generateOreType(ores, ore, cx, cy, cz, radius, biome, random, layer.depthRange);
+                generateOreType(ores, ore, cx, cy, cz, radius, shellStart, shellEnd, biome, random, layer.depthRange, isHollow);
             }
         }
 
-        // Core inclusions for solid planets
-        if (!isHollowPlanet(orb)) { // Only for solid planets
+        // Core inclusions only for solid planets
+        if (!isHollow) {
             generateCoreInclusions(ores, cx, cy, cz, radius, biome, random);
         }
 
@@ -39,61 +47,103 @@ public class OreGenerator {
     
     private static void generateOreType(List<BlockData> ores, OreConfig ore,
                                         int cx, int cy, int cz, int radius,
-                                        BiomeType biome, Random random, double[] depthRange) {
+                                        double shellStart, double shellEnd,
+                                        BiomeType biome, Random random, double[] depthRange,
+                                        boolean isHollow) {
 
-        // Calculate depth-based position within the planet
-        double minDepth = depthRange[0]; // 0.0 = surface, 1.0 = core
-        double maxDepth = depthRange[1];
+        // Calculate ore spawn count based on volume
+        double volume;
+        if (isHollow) {
+            // Shell volume = outer sphere - inner sphere
+            volume = (4.0/3.0) * Math.PI * (Math.pow(shellEnd, 3) - Math.pow(shellStart, 3));
+        } else {
+            // Full sphere volume
+            volume = (4.0/3.0) * Math.PI * Math.pow(radius, 3);
+        }
 
-        int minY = (int)(cy - radius + (radius * 2 * minDepth));
-        int maxY = (int)(cy - radius + (radius * 2 * maxDepth));
-
-        if (maxY <= minY) return;
-
-        int veinCount = (int)(radius * radius * ore.chance * 0.1); // Base count
+        // FIXED: Daha fazla ore için scale factor artırıldı
+        int veinCount = (int)(volume * ore.chance * 0.001); // 10x daha fazla ore!
+        veinCount = Math.max(5, veinCount); // En az 5 vein
 
         for (int i = 0; i < veinCount; i++) {
-            // Generate position within planet volume
+            // Generate random position within valid region
             double angle1 = random.nextDouble() * Math.PI * 2;
             double angle2 = random.nextDouble() * Math.PI;
-            double distance = minDepth + random.nextDouble() * (maxDepth - minDepth);
 
-            int x = cx + (int)(Math.sin(angle2) * Math.cos(angle1) * radius * distance);
-            int z = cz + (int)(Math.sin(angle2) * Math.sin(angle1) * radius * distance);
-            int y = minY + random.nextInt(maxY - minY + 1);
+            // FIXED: Distance calculation - ore'lar içerde olmalı!
+            double distance;
+            if (isHollow) {
+                // Random distance between shell boundaries
+                distance = shellStart + random.nextDouble() * (shellEnd - shellStart);
+            } else {
+                // SOLID PLANET: Merkeze yakın spawn (0 = merkez, radius = yüzey)
+                // depthRange[0] = 0.3 (yüzeye yakın), depthRange[1] = 0.9 (merkeze yakın)
+                // Distance 0'dan radius'a kadar olmalı
+                double minDistance = radius * (1.0 - depthRange[1]); // Merkeze yakın
+                double maxDistance = radius * (1.0 - depthRange[0]); // Yüzeye yakın
+                distance = minDistance + random.nextDouble() * (maxDistance - minDistance);
+            }
 
-            // Ensure position is inside solid planet volume (not air/structure blocks)
-            if (!isInsideSolidVolume(x - cx, y - cy, z - cz, radius)) continue;
+            // FIXED: Doğru koordinat hesaplama
+            int x = cx + (int)(Math.sin(angle2) * Math.cos(angle1) * distance);
+            int y = cy + (int)(Math.cos(angle2) * distance);
+            int z = cz + (int)(Math.sin(angle2) * Math.sin(angle1) * distance);
 
-            // Generate vein
-            generateVein(ores, x, y, z, ore, random, cx, cy, cz, radius);
+            // Verify position is in valid region
+            double actualDistance = Math.sqrt((x-cx)*(x-cx) + (y-cy)*(y-cy) + (z-cz)*(z-cz));
+
+            if (isHollow) {
+                // Must be within shell (between inner and outer radius)
+                if (actualDistance < shellStart || actualDistance > shellEnd) {
+                    continue;
+                }
+            } else {
+                // FIXED: Must be INSIDE planet (not outside!)
+                if (actualDistance > radius - 2) { // 2 blok içerde
+                    continue;
+                }
+            }
+
+            // Generate vein at this position
+            generateVein(ores, x, y, z, ore, random, cx, cy, cz, radius, shellStart, shellEnd, isHollow);
         }
     }
     
-    /**
-     * Generate ore vein within solid planet volume
-     */
     private static void generateVein(List<BlockData> ores, int startX, int startY, int startZ,
-                                     OreConfig ore, Random random, int cx, int cy, int cz, int radius) {
+                                     OreConfig ore, Random random, int cx, int cy, int cz,
+                                     int radius, double shellStart, double shellEnd, boolean isHollow) {
 
         int veinSize = ore.veinSize[0] + random.nextInt(ore.veinSize[1] - ore.veinSize[0] + 1);
 
         for (int i = 0; i < veinSize; i++) {
-            double angle1 = random.nextDouble() * Math.PI * 2;
-            double angle2 = random.nextDouble() * Math.PI;
-            double distance = random.nextDouble() * 2.0; // Spread within vein
+            // Small random offset for vein spread
+            int offsetX = random.nextInt(3) - 1;
+            int offsetY = random.nextInt(3) - 1;
+            int offsetZ = random.nextInt(3) - 1;
 
-            int x = startX + (int)(Math.sin(angle2) * Math.cos(angle1) * distance);
-            int y = startY + (int)((random.nextDouble() - 0.5) * 2.0);
-            int z = startZ + (int)(Math.sin(angle2) * Math.sin(angle1) * distance);
+            int x = startX + offsetX;
+            int y = startY + offsetY;
+            int z = startZ + offsetZ;
 
-            // Ensure still within solid volume
-            if (!isInsideSolidVolume(x - cx, y - cy, z - cz, radius)) continue;
+            // Verify each block is in valid region
+            double distance = Math.sqrt((x-cx)*(x-cx) + (y-cy)*(y-cy) + (z-cz)*(z-cz));
 
-            // Deepslate variant for deeper ores
+            if (isHollow) {
+                // Must be within shell
+                if (distance < shellStart || distance > shellEnd) {
+                    continue;
+                }
+            } else {
+                // Must be within planet
+                if (distance > radius - 1) {
+                    continue;
+                }
+            }
+
+            // Select material (deepslate variant for deeper ores)
             Material material = ore.type;
-            double depth = Math.sqrt((x-cx)*(x-cx) + (y-cy)*(y-cy) + (z-cz)*(z-cz)) / radius;
-            if (depth > 0.6 && ore.deepslateVariant != null) {
+            double depthRatio = distance / radius;
+            if (depthRatio < 0.4 && ore.deepslateVariant != null) { // Deep = closer to center
                 material = ore.deepslateVariant;
             }
 
@@ -169,9 +219,6 @@ public class OreGenerator {
         }
     }
 
-    /**
-     * Get ore layers configuration for each biome
-     */
     private static List<OreLayer> getOreLayersForBiome(BiomeType biome) {
         List<OreLayer> layers = new ArrayList<>();
 
@@ -181,7 +228,7 @@ public class OreGenerator {
             new OreConfig(Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE, 0.25, new int[]{2, 5}),
             new OreConfig(Material.COPPER_ORE, Material.DEEPSLATE_COPPER_ORE, 0.2, new int[]{3, 7})
         );
-        layers.add(new OreLayer("common", commonOres, new double[]{0.2, 0.8}));
+        layers.add(new OreLayer("common", commonOres, new double[]{0.3, 0.9}));
 
         // Rare layer - deeper
         List<OreConfig> rareOres = new ArrayList<>();
@@ -189,41 +236,37 @@ public class OreGenerator {
         rareOres.add(new OreConfig(Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE, 0.06, new int[]{2, 5}));
         rareOres.add(new OreConfig(Material.LAPIS_ORE, Material.DEEPSLATE_LAPIS_ORE, 0.04, new int[]{2, 5}));
 
-        // Biome-specific rare ores
+        // Biome-specific bonuses
         switch (biome) {
-            case LAVA_OCEAN, MAGMA_CAVES -> {
-                rareOres.add(new OreConfig(Material.ANCIENT_DEBRIS, null, 0.02, new int[]{1, 3}));
-            }
-            case CRYSTAL_FOREST -> {
-                rareOres.add(new OreConfig(Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE, 0.03, new int[]{1, 4}));
-            }
-            case MEADOW, FOREST, TAIGA -> {
-                rareOres.add(new OreConfig(Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE, 0.01, new int[]{1, 1}));
-            }
-            case FROZEN_TUNDRA, GLACIER, ICE_SPIKES -> {
-                rareOres.add(new OreConfig(Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE, 0.04, new int[]{1, 4}));
-            }
-            case BADLANDS, CANYON -> {
+            case LAVA_OCEAN, MAGMA_CAVES, OBSIDIAN_PLAINS -> {
+                rareOres.add(new OreConfig(Material.ANCIENT_DEBRIS, null, 0.03, new int[]{1, 3}));
                 rareOres.add(new OreConfig(Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE, 0.15, new int[]{2, 6}));
             }
-            case JUNGLE, SAVANNA -> {
+            case CRYSTAL_FOREST, CRYSTALLINE -> {
+                rareOres.add(new OreConfig(Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE, 0.05, new int[]{1, 4}));
+                rareOres.add(new OreConfig(Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE, 0.03, new int[]{1, 2}));
+            }
+            case MEADOW, FOREST, TAIGA, JUNGLE -> {
+                rareOres.add(new OreConfig(Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE, 0.02, new int[]{1, 1}));
+            }
+            case FROZEN_TUNDRA, GLACIER, ICE_SPIKES -> {
+                rareOres.add(new OreConfig(Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE, 0.06, new int[]{1, 4}));
+                rareOres.add(new OreConfig(Material.LAPIS_ORE, Material.DEEPSLATE_LAPIS_ORE, 0.08, new int[]{3, 7}));
+            }
+            case BADLANDS, CANYON, DESERT -> {
+                rareOres.add(new OreConfig(Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE, 0.18, new int[]{2, 6}));
                 rareOres.add(new OreConfig(Material.COPPER_ORE, Material.DEEPSLATE_COPPER_ORE, 0.12, new int[]{3, 8}));
+            }
+            case BASALTIC -> {
+                rareOres.add(new OreConfig(Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE, 0.04, new int[]{1, 3}));
             }
         }
 
-        layers.add(new OreLayer("rare", rareOres, new double[]{0.5, 0.9}));
+        layers.add(new OreLayer("rare", rareOres, new double[]{0.1, 0.6}));
 
         return layers;
     }
 
-    /**
-     * Check if planet is hollow (temporary method until Orb class is updated)
-     */
-    private static boolean isHollowPlanet(Orb orb) {
-        // For now, assume planets with certain shapes are hollow
-        // This should be replaced with a proper isHollow() method in Orb class
-        return false; // Default to solid for now
-    }
 
     public static class BlockData {
         public final int x, y, z;

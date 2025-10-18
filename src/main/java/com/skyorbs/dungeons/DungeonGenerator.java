@@ -172,50 +172,51 @@ public class DungeonGenerator {
     private List<ItemStack> generateLootItems(DungeonType type, int coreLevel, Random random) {
         List<ItemStack> loot = new ArrayList<>();
 
-        // Base loot based on dungeon type
+        // Base loot based on dungeon type - FIXED: Ensure amount is always >= 1
         switch (type) {
             case CRYSTAL_CAVERN -> {
-                loot.add(new ItemStack(Material.DIAMOND, random.nextInt(3) + 1));
-                loot.add(new ItemStack(Material.EMERALD, random.nextInt(2) + 1));
+                loot.add(new ItemStack(Material.DIAMOND, Math.max(1, random.nextInt(3) + 1)));
+                loot.add(new ItemStack(Material.EMERALD, Math.max(1, random.nextInt(2) + 1)));
                 if (coreLevel >= 3) {
-                    loot.add(new ItemStack(Material.AMETHYST_SHARD, random.nextInt(5) + 3));
+                    loot.add(new ItemStack(Material.AMETHYST_SHARD, Math.max(1, random.nextInt(5) + 3)));
                 }
             }
             case LAVA_CHAMBER -> {
-                loot.add(new ItemStack(Material.GOLD_INGOT, random.nextInt(4) + 2));
-                loot.add(new ItemStack(Material.NETHERITE_INGOT, random.nextInt(2)));
+                loot.add(new ItemStack(Material.GOLD_INGOT, Math.max(1, random.nextInt(4) + 2)));
+                int netheriteAmount = random.nextInt(2) + 1; // FIXED: +1 to ensure at least 1
+                loot.add(new ItemStack(Material.NETHERITE_INGOT, Math.max(1, netheriteAmount)));
                 if (coreLevel >= 4) {
-                    loot.add(new ItemStack(Material.ANCIENT_DEBRIS, random.nextInt(3) + 1));
+                    loot.add(new ItemStack(Material.ANCIENT_DEBRIS, Math.max(1, random.nextInt(3) + 1)));
                 }
             }
             case ICE_TOMB -> {
-                loot.add(new ItemStack(Material.DIAMOND, random.nextInt(2) + 1));
+                loot.add(new ItemStack(Material.DIAMOND, Math.max(1, random.nextInt(2) + 1)));
                 if (coreLevel >= 2) {
-                    loot.add(new ItemStack(Material.BLUE_ICE, random.nextInt(8) + 4));
+                    loot.add(new ItemStack(Material.BLUE_ICE, Math.max(1, random.nextInt(8) + 4)));
                 }
             }
             case SHADOW_VAULT -> {
-                loot.add(new ItemStack(Material.OBSIDIAN, random.nextInt(16) + 8));
+                loot.add(new ItemStack(Material.OBSIDIAN, Math.max(1, random.nextInt(16) + 8)));
                 if (coreLevel >= 5) {
-                    loot.add(new ItemStack(Material.CRYING_OBSIDIAN, random.nextInt(4) + 1));
+                    loot.add(new ItemStack(Material.CRYING_OBSIDIAN, Math.max(1, random.nextInt(4) + 1)));
                 }
             }
             case TOXIC_LAB -> {
-                loot.add(new ItemStack(Material.SLIME_BALL, random.nextInt(12) + 6));
+                loot.add(new ItemStack(Material.SLIME_BALL, Math.max(1, random.nextInt(12) + 6)));
                 if (coreLevel >= 3) {
-                    loot.add(new ItemStack(Material.HONEY_BOTTLE, random.nextInt(3) + 1));
+                    loot.add(new ItemStack(Material.HONEY_BOTTLE, Math.max(1, random.nextInt(3) + 1)));
                 }
             }
         }
 
-        // Add common loot
-        loot.add(new ItemStack(Material.IRON_INGOT, random.nextInt(8) + 4));
-        loot.add(new ItemStack(Material.GOLD_INGOT, random.nextInt(4) + 2));
+        // Add common loot - FIXED: Ensure amount is always >= 1
+        loot.add(new ItemStack(Material.IRON_INGOT, Math.max(1, random.nextInt(8) + 4)));
+        loot.add(new ItemStack(Material.GOLD_INGOT, Math.max(1, random.nextInt(4) + 2)));
 
         // Add experience bottles based on core level
-        int expBottles = Math.min(coreLevel, 3);
+        int expBottles = Math.max(1, Math.min(coreLevel, 3)); // FIXED: At least 1
         for (int i = 0; i < expBottles; i++) {
-            loot.add(new ItemStack(Material.EXPERIENCE_BOTTLE, random.nextInt(3) + 1));
+            loot.add(new ItemStack(Material.EXPERIENCE_BOTTLE, Math.max(1, random.nextInt(3) + 1)));
         }
 
         return loot;
@@ -273,10 +274,10 @@ public class DungeonGenerator {
         List<ItemStack> loot = new ArrayList<>();
         Random random = new Random(orb.getSeed() + 999);
 
-        // Legendary items based on core level
+        // Legendary items based on core level - FIXED: Ensure amount is always >= 1
         if (orb.getCoreLevel() >= 5) {
-            loot.add(new ItemStack(Material.NETHERITE_INGOT, random.nextInt(3) + 1));
-            loot.add(new ItemStack(Material.DIAMOND_BLOCK, random.nextInt(2) + 1));
+            loot.add(new ItemStack(Material.NETHERITE_INGOT, Math.max(1, random.nextInt(3) + 1)));
+            loot.add(new ItemStack(Material.DIAMOND_BLOCK, Math.max(1, random.nextInt(2) + 1)));
         }
 
         if (orb.getCoreLevel() >= 7) {
@@ -287,13 +288,13 @@ public class DungeonGenerator {
             loot.add(new ItemStack(Material.NETHER_STAR, 1));
         }
 
-        // Planet-specific legendary items
+        // Planet-specific legendary items - FIXED: Ensure amount is always >= 1
         switch (orb.getPlanetType()) {
-            case CRYSTAL -> loot.add(new ItemStack(Material.AMETHYST_BLOCK, random.nextInt(16) + 8));
-            case LAVA -> loot.add(new ItemStack(Material.ANCIENT_DEBRIS, random.nextInt(8) + 4));
-            case ICE -> loot.add(new ItemStack(Material.BLUE_ICE, random.nextInt(32) + 16));
-            case SHADOW -> loot.add(new ItemStack(Material.CRYING_OBSIDIAN, random.nextInt(12) + 6));
-            case TOXIC -> loot.add(new ItemStack(Material.SLIME_BLOCK, random.nextInt(24) + 12));
+            case CRYSTAL -> loot.add(new ItemStack(Material.AMETHYST_BLOCK, Math.max(1, random.nextInt(16) + 8)));
+            case LAVA -> loot.add(new ItemStack(Material.ANCIENT_DEBRIS, Math.max(1, random.nextInt(8) + 4)));
+            case ICE -> loot.add(new ItemStack(Material.BLUE_ICE, Math.max(1, random.nextInt(32) + 16)));
+            case SHADOW -> loot.add(new ItemStack(Material.CRYING_OBSIDIAN, Math.max(1, random.nextInt(12) + 6)));
+            case TOXIC -> loot.add(new ItemStack(Material.SLIME_BLOCK, Math.max(1, random.nextInt(24) + 12)));
         }
 
         return loot;

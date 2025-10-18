@@ -1,495 +1,1122 @@
 # ============================================
-# SkyOrbs 2.0.0 - Türkçe Gezegen Sistemi
+# SkyOrbs 2.0.0 - ULTRA DETAILED CONFIGURATION
+# Her şey config'den düzenlenebilir!
 # ============================================
 
-# Gezegen Üretim Ayarları
+# ========================================
+# GEZEGEN BOYUTU VE ŞEKİL SİSTEMİ
+# ========================================
 generation:
   planetSize:
-    minRadius: 25          # Minimum gezegen yarıçapı (çok küçük - hızlı)
-    maxRadius: 50          # Maximum gezegen yarıçapı (çok küçük - hızlı)
-    averageRadius: 35      # Ortalama gezegen boyutu (çok küçük - hızlı)
+    minRadius: 25
+    maxRadius: 50
+    averageRadius: 35
+    randomVariation: 5  # ±5 blok rastgele varyasyon
+
+  # ========================================
+  # ŞEKİL AĞIRLIKLARI (28 Farklı Şekil!)
+  # Yüksek değer = Daha sık görünür
+  # ========================================
+  shapes:
+    weights:
+      # Temel Şekiller (10)
+      SPHERE: 5.0           # Küre - Klasik gezegen
+      HEMISPHERE: 8.0       # Yarım küre
+      BLOB: 10.0            # Düzensiz şekil
+      ELLIPSOID: 8.0        # Elips
+      ASTEROID: 7.0         # Asteroid
+      TORUS: 4.0            # Halka şekli
+      RING: 3.0             # Düz halka
+      CYLINDER: 5.0         # Silindir
+      CONE: 6.0             # Koni
+      DIAMOND: 5.0          # Elmas şekli
+      
+      # Gelişmiş Şekiller (8)
+      CUBE: 4.0             # Küp
+      PYRAMID: 4.0          # Piramit
+      OCTAHEDRON: 3.0       # Sekizyüzlü
+      FRACTAL: 6.0          # Fraktal yapı
+      SPIKY: 5.0            # Dikenli
+      COMET: 3.0            # Kuyruklu yıldız
+      CRESCENT: 4.0         # Hilal
+      HYBRID: 2.0           # Hibrit (karışık)
+      
+      # YENİ Şekiller (10) - ÇEŞİTLİLİK İÇİN!
+      LAYERED: 7.0          # Katmanlı gezegen
+      CRATERED: 8.0         # Kraterli yüzey
+      HONEYCOMB: 5.0        # Bal peteği yapısı
+      SPIRAL: 6.0           # Spiral formasyonlar
+      WAVE: 7.0             # Dalgalı desenler
+      CRYSTAL: 6.0          # Kristal yüzeyler
+      ORGANIC: 8.0          # Organik formlar
+      GEOMETRIC: 5.0        # Geometrik çokyüzlü
+      NEBULA: 4.0           # Nebula bulutu
+      ASTEROID_FIELD: 6.0   # Asteroid kümesi
+
+# ========================================
+# MADEN (ORE) SİSTEMİ - TAM KONTROL
+# ========================================
+features:
+  ores:
+    enabled: true
+    densityMultiplier: 1.5        # Genel maden yoğunluğu (1.0 = normal, 2.0 = 2x daha fazla)
+    deepslateVariants: true       # Derinlerde deepslate varyantları
+    biomeBonuses: true            # Biyoma özel bonus madenler
+    hollowPlanetSpawn: true       # İçi boş gezegenlerde kabukta spawn
     
-    # Boyut kategorileri (opsiyonel)
-    small: 80-120
-    medium: 120-180
-    large: 180-250
+    # ========================================
+    # MADEN KATMANLARI - HER BİRİ DÜZENLENEBİLİR
+    # ========================================
+    layers:
+      # YAYGIN MADENLER (Yüzeye yakın)
+      common:
+        enabled: true
+        depth: [0.3, 0.9]         # Derinlik aralığı (0=merkez, 1=yüzey)
+        ores:
+          - type: COAL_ORE
+            deepslateType: DEEPSLATE_COAL_ORE
+            chance: 0.35            # Spawn şansı (0.0-1.0)
+            veinSize: [3, 8]        # Damar boyutu [min, max]
+            enabled: true
+            
+          - type: IRON_ORE
+            deepslateType: DEEPSLATE_IRON_ORE
+            chance: 0.30
+            veinSize: [2, 6]
+            enabled: true
+            
+          - type: COPPER_ORE
+            deepslateType: DEEPSLATE_COPPER_ORE
+            chance: 0.25
+            veinSize: [3, 9]
+            enabled: true
+      
+      # NADİR MADENLER (Daha derin)
+      rare:
+        enabled: true
+        depth: [0.1, 0.6]
+        ores:
+          - type: GOLD_ORE
+            deepslateType: DEEPSLATE_GOLD_ORE
+            chance: 0.12
+            veinSize: [2, 5]
+            enabled: true
+            
+          - type: REDSTONE_ORE
+            deepslateType: DEEPSLATE_REDSTONE_ORE
+            chance: 0.10
+            veinSize: [3, 7]
+            enabled: true
+            
+          - type: LAPIS_ORE
+            deepslateType: DEEPSLATE_LAPIS_ORE
+            chance: 0.08
+            veinSize: [2, 6]
+            enabled: true
+            
+          - type: DIAMOND_ORE
+            deepslateType: DEEPSLATE_DIAMOND_ORE
+            chance: 0.04
+            veinSize: [1, 4]
+            enabled: true
+            
+          - type: EMERALD_ORE
+            deepslateType: DEEPSLATE_EMERALD_ORE
+            chance: 0.02
+            veinSize: [1, 2]
+            enabled: true
+      
+      # ÇEKİRDEK MADENLERI (En derin, sadece solid gezegenler)
+      core:
+        enabled: true
+        depth: [0.0, 0.2]         # Merkeze çok yakın
+        coreRadius: 0.2           # Çekirdek yarıçapı (gezegen yarıçapının yüzdesi)
+        inclusionChance: 0.08     # Dahil olma şansı
+        ores:
+          - type: ANCIENT_DEBRIS
+            chance: 0.05
+            veinSize: [1, 3]
+            enabled: true
+            
+          - type: DIAMOND_ORE
+            chance: 0.08
+            veinSize: [2, 5]
+            enabled: true
+            
+          - type: NETHERITE_SCRAP
+            chance: 0.03
+            veinSize: [1, 2]
+            enabled: true
+    
+    # ========================================
+    # BİYOMA ÖZEL MADEN BONUSLARI
+    # ========================================
+    biomeBonuses:
+      LAVA_OCEAN:
+        - type: ANCIENT_DEBRIS
+          chanceMultiplier: 3.0
+          veinSizeBonus: 2
+      
+      MAGMA_CAVES:
+        - type: GOLD_ORE
+          chanceMultiplier: 2.5
+          veinSizeBonus: 3
+      
+      CRYSTAL_FOREST:
+        - type: DIAMOND_ORE
+          chanceMultiplier: 2.0
+          veinSizeBonus: 2
+        - type: EMERALD_ORE
+          chanceMultiplier: 1.5
+          veinSizeBonus: 1
+      
+      FROZEN_TUNDRA:
+        - type: DIAMOND_ORE
+          chanceMultiplier: 1.8
+          veinSizeBonus: 1
+        - type: LAPIS_ORE
+          chanceMultiplier: 2.0
+          veinSizeBonus: 3
+      
+      BADLANDS:
+        - type: GOLD_ORE
+          chanceMultiplier: 3.0
+          veinSizeBonus: 4
+        - type: COPPER_ORE
+          chanceMultiplier: 2.0
+          veinSizeBonus: 3
 
-# Gezegen Yerleştirme
-placement:
-  worldBounds:
-    centerX: 0                    # Dünya merkez X
-    centerZ: 0                    # Dünya merkez Z
-    maxDistance: 5000             # Spawn'dan maksimum uzaklık (artırıldı)
-    minDistanceFromSpawn: 1500    # Spawn'dan minimum uzaklık (artırıldı)
-  
-  clustering:
-    enabled: true                 # Gezegenleri kümeleme
-    clusterMinDistance: 2000      # Kümede minimum mesafe (çok artırıldı)
-    clusterMaxDistance: 4000      # Kümede maksimum mesafe (çok artırıldı)
-  
-  attractToCenter:
-    centerAttraction: 0.3         # Merkeze çekim kuvveti (0.0-1.0)
+  # ========================================
+  # AĞAÇ SİSTEMİ - TAM KONTROL
+  # ========================================
+  trees:
+    enabled: true
+    densityMultiplier: 2.5        # Ağaç yoğunluğu (1.0 = normal, 3.0 = 3x daha fazla)
+    specialFeatures: true         # Arı kovanı, kakao, asma yaprak vb.
+    groundCheck: true             # Zemin kontrolü (havada ağaç olmasın)
+    maxSearchDistance: 15         # Zemin arama mesafesi
+    
+    # ========================================
+    # BİYOMA ÖZEL A��AÇ AYARLARI
+    # ========================================
+    biomes:
+      FOREST:
+        enabled: true
+        density: 0.30             # Ağaç yoğunluğu
+        types:
+          OAK:
+            weight: 50            # Ağırlık (yüksek = daha sık)
+            minHeight: 4
+            maxHeight: 7
+            beeNestChance: 0.20   # Arı kovanı şansı
+          BIRCH:
+            weight: 30
+            minHeight: 5
+            maxHeight: 8
+            beeNestChance: 0.15
+          DARK_OAK:
+            weight: 20
+            minHeight: 6
+            maxHeight: 9
+            mushroomChance: 0.35  # Mantar şansı
+      
+      JUNGLE:
+        enabled: true
+        density: 0.40
+        types:
+          JUNGLE:
+            weight: 70
+            minHeight: 5
+            maxHeight: 8
+            cocoaChance: 0.30     # Kakao şansı
+            vineChance: 0.40      # Asma yaprak şansı
+          JUNGLE_LARGE:
+            weight: 30
+            minHeight: 12
+            maxHeight: 18
+            cocoaChance: 0.40
+            vineChance: 0.50
+      
+      TAIGA:
+        enabled: true
+        density: 0.25
+        types:
+          SPRUCE:
+            weight: 70
+            minHeight: 7
+            maxHeight: 12
+          PINE:
+            weight: 30
+            minHeight: 10
+            maxHeight: 15
+      
+      SAVANNA:
+        enabled: true
+        density: 0.10
+        types:
+          ACACIA:
+            weight: 100
+            minHeight: 5
+            maxHeight: 8
+      
+      MEADOW:
+        enabled: true
+        density: 0.18
+        types:
+          OAK:
+            weight: 40
+            minHeight: 4
+            maxHeight: 6
+          BIRCH:
+            weight: 40
+            minHeight: 5
+            maxHeight: 7
+          CHERRY:
+            weight: 20
+            minHeight: 6
+            maxHeight: 9
+            petalChance: 0.50     # Pembe yaprak şansı
+      
+      MUSHROOM_GIANT:
+        enabled: true
+        density: 0.15
+        types:
+          GIANT_MUSHROOM_RED:
+            weight: 50
+            minHeight: 5
+            maxHeight: 8
+          GIANT_MUSHROOM_BROWN:
+            weight: 50
+            minHeight: 5
+            maxHeight: 8
+      
+      TOXIC_SWAMP:
+        enabled: true
+        density: 0.20
+        types:
+          MANGROVE:
+            weight: 60
+            minHeight: 5
+            maxHeight: 9
+          DARK_OAK:
+            weight: 40
+            minHeight: 6
+            maxHeight: 8
+            mushroomChance: 0.40
 
-# Gezegen Şekilleri ve Ağırlıkları
-shapes:
-  weights:
-    # Basic shapes (10)
-    SPHERE: 8.0         # Küre
-    HEMISPHERE: 15.0    # Yarım Küre
-    BLOB: 12.0          # Ameba
-    ELLIPSOID: 10.0     # Elips
-    ASTEROID: 8.0       # Asteroid
-    TORUS: 6.0          # Çörek
-    RING: 3.0           # Halka
-    CYLINDER: 5.0       # Silindir
-    CONE: 7.0           # Koni
-    DIAMOND: 6.0        # Elmas
+  # ========================================
+  # YAPI (STRUCTURE) SİSTEMİ
+  # ========================================
+  structures:
+    enabled: true
+    densityMultiplier: 1.5        # Yapı yoğunluğu
+    includeChests: true           # Sandık içersin mi?
+    biomeLinked: true             # Biyoma özel yapılar
+    
+    # ========================================
+    # YAPI TİPLERİ VE AYARLARI
+    # ========================================
+    types:
+      # TAPINAK
+      TEMPLE:
+        enabled: true
+        chance: 0.15              # Spawn şansı
+        minSize: [7, 7, 7]        # Minimum boyut [x, y, z]
+        maxSize: [12, 12, 12]     # Maximum boyut
+        chestCount: [2, 4]        # Sandık sayısı [min, max]
+        materials:
+          walls: STONE_BRICKS
+          floor: POLISHED_ANDESITE
+          pillars: QUARTZ_PILLAR
+        biomes:                   # Hangi biyomlarda spawn olur
+          - DESERT
+          - JUNGLE
+          - MEADOW
+      
+      # KULE
+      TOWER:
+        enabled: true
+        chance: 0.12
+        minSize: [5, 15, 5]
+        maxSize: [7, 25, 7]
+        chestCount: [1, 3]
+        materials:
+          walls: COBBLESTONE
+          floor: STONE
+          roof: DARK_OAK_PLANKS
+        biomes:
+          - PLAINS
+          - FOREST
+          - TAIGA
+      
+      # HARABE
+      RUINS:
+        enabled: true
+        chance: 0.20
+        minSize: [8, 4, 8]
+        maxSize: [15, 7, 15]
+        chestCount: [1, 2]
+        materials:
+          walls: MOSSY_COBBLESTONE
+          floor: CRACKED_STONE_BRICKS
+        biomes:
+          - FOREST
+          - JUNGLE
+          - SWAMP
+      
+      # KRİSTAL OLUŞUMU
+      CRYSTAL_FORMATION:
+        enabled: true
+        chance: 0.10
+        minSize: [5, 8, 5]
+        maxSize: [10, 15, 10]
+        chestCount: [2, 3]
+        materials:
+          main: AMETHYST_BLOCK
+          accent: QUARTZ_BLOCK
+        biomes:
+          - CRYSTAL_FOREST
+          - CRYSTALLINE
+      
+      # LAVA ŞAPELİ
+      LAVA_SHRINE:
+        enabled: true
+        chance: 0.08
+        minSize: [6, 6, 6]
+        maxSize: [10, 10, 10]
+        chestCount: [2, 4]
+        materials:
+          walls: NETHERRACK
+          floor: MAGMA_BLOCK
+          accent: NETHER_BRICKS
+        biomes:
+          - LAVA_OCEAN
+          - MAGMA_CAVES
+      
+      # BUZ KALE
+      ICE_FORTRESS:
+        enabled: true
+        chance: 0.10
+        minSize: [10, 8, 10]
+        maxSize: [16, 12, 16]
+        chestCount: [3, 5]
+        materials:
+          walls: PACKED_ICE
+          floor: BLUE_ICE
+          accent: SNOW_BLOCK
+        biomes:
+          - FROZEN_TUNDRA
+          - GLACIER
+          - ICE_SPIKES
 
-    # Advanced shapes (10)
-    CUBE: 4.0           # Küp
-    PYRAMID: 3.0        # Piramit
-    OCTAHEDRON: 2.0     # Sekizyüzlü
-    FRACTAL: 2.0        # Fraktal
-    SPIKY: 1.5          # Dikenli
-    COMET: 1.0          # Kuyruklu yıldız
-    CRESCENT: 1.0       # Hilal
-    HYBRID: 0.5         # Karma
+  # ========================================
+  # HAZİNE SİSTEMİ
+  # ========================================
+  treasures:
+    enabled: true
+    densityMultiplier: 1.2        # Hazine yoğunluğu
+    legendaryChanceMultiplier: 1.5  # Efsanevi hazine şansı çarpanı
+    biomeSpecific: true           # Biyoma özel loot
+    undergroundSpawn: true        # Yeraltında spawn
+    depthRange: [5, 15]           # Yüzeyin altında kaç blok [min, max]
+    
+    # ========================================
+    # HAZİNE SEVİYELERİ VE LOOT
+    # ========================================
+    tiers:
+      COMMON:
+        probability: 0.50         # %50 şans
+        items:
+          - type: IRON_INGOT
+            amount: [5, 12]
+          - type: GOLD_INGOT
+            amount: [2, 6]
+          - type: COAL
+            amount: [8, 20]
+          - type: BREAD
+            amount: [3, 8]
+          - type: IRON_SWORD
+            chance: 0.50
+      
+      UNCOMMON:
+        probability: 0.28         # %28 şans
+        items:
+          - type: GOLD_INGOT
+            amount: [6, 12]
+          - type: DIAMOND
+            amount: [1, 4]
+          - type: EMERALD
+            amount: [1, 3]
+            chance: 0.70
+          - type: ENCHANTED_BOOK
+            amount: [1, 1]
+          - type: GOLDEN_APPLE
+            amount: [1, 3]
+            chance: 0.50
+      
+      RARE:
+        probability: 0.15         # %15 şans
+        items:
+          - type: DIAMOND
+            amount: [4, 8]
+          - type: EMERALD
+            amount: [3, 6]
+          - type: NETHERITE_SCRAP
+            amount: [1, 2]
+            chance: 0.60
+          - type: GOLDEN_APPLE
+            amount: [2, 4]
+          - type: ENCHANTED_BOOK
+            amount: [1, 2]
+      
+      EPIC:
+        probability: 0.06         # %6 şans
+        items:
+          - type: DIAMOND
+            amount: [8, 15]
+          - type: EMERALD
+            amount: [6, 12]
+          - type: NETHERITE_INGOT
+            amount: [1, 3]
+          - type: ENCHANTED_GOLDEN_APPLE
+            amount: [1, 2]
+            chance: 0.60
+          - type: ENCHANTED_BOOK
+            amount: [2, 3]
+      
+      LEGENDARY:
+        probability: 0.01         # %1 şans (çok nadir!)
+        items:
+          - type: DIAMOND_BLOCK
+            amount: [3, 6]
+          - type: EMERALD_BLOCK
+            amount: [2, 4]
+          - type: NETHERITE_INGOT
+            amount: [3, 6]
+          - type: ENCHANTED_GOLDEN_APPLE
+            amount: [3, 5]
+          - type: TOTEM_OF_UNDYING
+            amount: [1, 1]
+          - type: ELYTRA
+            amount: [1, 1]
+          - type: TRIDENT
+            amount: [1, 1]
+          - type: ENCHANTED_BOOK
+            amount: [3, 5]
+    
+    # ========================================
+    # BİYOMA ÖZEL HAZİNE BONUSLARI
+    # ========================================
+    biomeBonuses:
+      CRYSTAL_FOREST:
+        legendaryMultiplier: 3.0  # 3x daha fazla efsanevi şans
+        extraItems:
+          - type: AMETHYST_SHARD
+            amount: [10, 20]
+          - type: DIAMOND
+            amount: [5, 10]
+      
+      LAVA_OCEAN:
+        legendaryMultiplier: 2.5
+        extraItems:
+          - type: ANCIENT_DEBRIS
+            amount: [2, 5]
+          - type: NETHERITE_SCRAP
+            amount: [3, 6]
+      
+      FROZEN_TUNDRA:
+        legendaryMultiplier: 2.0
+        extraItems:
+          - type: BLUE_ICE
+            amount: [5, 10]
+          - type: DIAMOND
+            amount: [3, 6]
 
-    # Diverse shapes (10 more)
-    LAYERED: 4.0        # Katmanlı
-    ASTEROID_FIELD: 2.0 # Asteroid alanı
-    CRATERED: 3.0       # Kraterli
-    HONEYCOMB: 2.0      # Bal peteği
-    SPIRAL: 1.5         # Spiral
-    WAVE: 2.5           # Dalgalı
-    CRYSTAL: 3.0        # Kristal
-    ORGANIC: 4.0        # Organik
-    GEOMETRIC: 2.0      # Geometrik
-    NEBULA: 1.0         # Nebula
+  # ========================================
+  # ZİNDAN SİSTEMİ
+  # ========================================
+  dungeons:
+    enabled: true
+    perPlanet: [2, 5]             # Gezegen başına zindan sayısı [min, max]
+    minDepth: 0.3                 # Minimum derinlik (gezegen yarıçapının yüzdesi)
+    maxDepth: 0.8                 # Maximum derinlik
+    
+    # ========================================
+    # ZİNDAN TİPLERİ
+    # ========================================
+    types:
+      CRYSTAL_CAVERN:
+        enabled: true
+        chance: 0.20
+        size: [8, 6, 8]           # Boyut [x, y, z]
+        materials:
+          walls: AMETHYST_BLOCK
+          floor: QUARTZ_BLOCK
+          ceiling: AMETHYST_BLOCK
+          decoration: AMETHYST_CLUSTER
+          lighting: SEA_LANTERN
+        chestCount: [2, 4]
+        mobSpawners: true
+        spawnerType: SILVERFISH
+        biomes:
+          - CRYSTAL_FOREST
+          - CRYSTALLINE
+      
+      LAVA_CHAMBER:
+        enabled: true
+        chance: 0.20
+        size: [10, 7, 10]
+        materials:
+          walls: NETHERRACK
+          floor: MAGMA_BLOCK
+          ceiling: NETHERRACK
+          decoration: FIRE
+          lighting: LAVA
+        chestCount: [2, 3]
+        mobSpawners: true
+        spawnerType: BLAZE
+        biomes:
+          - LAVA_OCEAN
+          - MAGMA_CAVES
+          - BASALTIC
+      
+      ICE_TOMB:
+        enabled: true
+        chance: 0.20
+        size: [7, 5, 7]
+        materials:
+          walls: PACKED_ICE
+          floor: BLUE_ICE
+          ceiling: PACKED_ICE
+          decoration: SNOW
+          lighting: TORCH
+        chestCount: [2, 3]
+        mobSpawners: true
+        spawnerType: STRAY
+        biomes:
+          - FROZEN_TUNDRA
+          - GLACIER
+          - ICE_SPIKES
+      
+      SHADOW_VAULT:
+        enabled: true
+        chance: 0.20
+        size: [9, 6, 9]
+        materials:
+          walls: OBSIDIAN
+          floor: CRYING_OBSIDIAN
+          ceiling: OBSIDIAN
+          decoration: SOUL_LANTERN
+          lighting: SOUL_LANTERN
+        chestCount: [3, 5]
+        mobSpawners: true
+        spawnerType: WITHER_SKELETON
+        biomes:
+          - VOID
+          - CHORUS_LAND
+          - CORRUPTED
+      
+      TOXIC_LAB:
+        enabled: true
+        chance: 0.20
+        size: [8, 5, 8]
+        materials:
+          walls: GREEN_CONCRETE
+          floor: SLIME_BLOCK
+          ceiling: GREEN_CONCRETE
+          decoration: GREEN_WOOL
+          lighting: GLOWSTONE
+        chestCount: [2, 4]
+        mobSpawners: true
+        spawnerType: CAVE_SPIDER
+        biomes:
+          - TOXIC_SWAMP
+          - TOXIC
 
-# Asteroid Sistemi
-asteroids:
+# ========================================
+# MODİFİYER SİSTEMİ
+# ========================================
+modifiers:
   enabled: true
-  perPlanet:
-    minCount: 1               # Gezegen başına minimum asteroid
-    maxCount: 5               # Gezegen başına maksimum asteroid
-  size:
-    minRadius: 20             # Minimum asteroid boyutu
-    maxRadius: 50             # Maksimum asteroid boyutu
-  placement:
-    minDistanceFromPlanet: 300
-    maxDistanceFromPlanet: 800
+  maxPerPlanet: 3                 # Bir gezegende max kaç modifier olabilir
+  
+  # ========================================
+  # İÇİ BOŞ GEZEGEN
+  # ========================================
+  hollow:
+    enabled: true
+    probability: 0.35             # %35 şans
+    shellThickness: 5             # Kabuk kalınlığı (blok)
+    innerRadiusRatio: 0.6         # İç yarıçap oranı (0.6 = %60 boş)
+    tunnelCount: [2, 5]           # Tünel sayısı [min, max]
+    tunnelRadius: [2, 4]          # Tünel yarıçapı [min, max]
+    
+    # İç yapılar
+    interiorStructures:
+      enabled: true
+      count: [2, 4]               # Yapı sayısı [min, max]
+      types:
+        - RUINS
+        - LAB
+        - TEMPLE
+        - HABITAT
+        - VAULT
+  
+  # ========================================
+  # MADEN ZENGİNİ
+  # ========================================
+  oreRich:
+    enabled: true
+    probability: 0.25
+    multiplier: 2.5               # Maden miktarı çarpanı
+    rareBonusMultiplier: 3.0      # Nadir madenler için ekstra çarpan
+  
+  # ========================================
+  # MAGMA ÇEKİRDEĞİ
+  # ========================================
+  magmaCore:
+    enabled: true
+    probability: 0.18
+    coreRadius: 0.25              # Çekirdek yarıçapı oranı
+    glowing: true                 # Işıldıyor mu?
+    materials:
+      - MAGMA_BLOCK
+      - LAVA
+      - NETHERRACK
+    heatDamage: true              # Yaklaşınca hasar versin mi?
+    damageAmount: 2               # Hasar miktarı (kalp)
+  
+  # ========================================
+  # BUZLU ÇEKİRDEK
+  # ========================================
+  icyCore:
+    enabled: true
+    probability: 0.15
+    coreRadius: 0.25
+    materials:
+      - BLUE_ICE
+      - PACKED_ICE
+      - ICE
+    freezeEffect: true            # Donma efekti versin mi?
+  
+  # ========================================
+  # KATMANLI YAPI
+  # ========================================
+  layered:
+    enabled: true
+    probability: 0.22
+    layerCount: [3, 7]            # Katman sayısı [min, max]
+    layerThickness: [3, 8]        # Katman kalınlığı [min, max]
+    alternatingMaterials: true    # Farklı materyaller kullan
+  
+  # ========================================
+  # GÖZENEKLI (Tünelli)
+  # ========================================
+  porous:
+    enabled: true
+    probability: 0.20
+    tunnelCount: [8, 15]          # Tünel sayısı [min, max]
+    tunnelRadius: [1, 3]          # Tünel yarıçapı [min, max]
+    caveChance: 0.30              # Büyük mağara şansı
+  
+  # ========================================
+  # HALKALI
+  # ========================================
+  ringed:
+    enabled: true
+    probability: 0.18
+    ringCount: [1, 3]             # Halka sayısı [min, max]
+    ringThickness: [2, 4]         # Halka kalınlığı [min, max]
+    ringDistance: [1.5, 2.5]      # Halka mesafesi çarpanı
+    particles: true               # Parçacık efekti
+  
+  # ========================================
+  # RADYOAKTİF
+  # ========================================
+  radioactive:
+    enabled: true
+    probability: 0.08
+    radiationRadius: 1.3          # Radyasyon yarıçapı çarpanı
+    glowEffect: true              # Işıldama efekti
+    poisonEffect: true            # Zehir efekti
+    materials:
+      - LIME_CONCRETE
+      - GREEN_CONCRETE
+      - SLIME_BLOCK
 
-# Uydu Sistemi
+# ========================================
+# ATMOSFER SİSTEMİ
+# ========================================
+atmospheres:
+  enabled: true
+  effectRadius: 1.2               # Etki yarıçapı çarpanı (gezegen yarıçapı × bu değer)
+  particleCount: 50               # Parçacık sayısı
+  
+  types:
+    CLEAR:
+      probability: 0.30           # %30 şans
+      effects: []
+      particles: NONE
+    
+    LUMINOUS:
+      probability: 0.15
+      effects:
+        - type: NIGHT_VISION
+          duration: 200           # Tick cinsinden
+          amplifier: 0
+        - type: GLOWING
+          duration: 200
+          amplifier: 0
+      particles: END_ROD
+      particleSpeed: 0.02
+    
+    TOXIC:
+      probability: 0.12
+      effects:
+        - type: POISON
+          duration: 100
+          amplifier: 1
+        - type: SLOWNESS
+          duration: 100
+          amplifier: 0
+      particles: DRIP_LAVA
+      particleSpeed: 0.01
+    
+    STORMY:
+      probability: 0.10
+      effects:
+        - type: SLOWNESS
+          duration: 100
+          amplifier: 0
+      particles: CLOUD
+      particleSpeed: 0.05
+      lightning: true             # Şimşek çakabilir
+      lightningChance: 0.01
+    
+    FOGGY:
+      probability: 0.08
+      effects:
+        - type: BLINDNESS
+          duration: 60
+          amplifier: 0
+      particles: SUSPENDED_DEPTH
+      particleSpeed: 0.01
+    
+    CORROSIVE:
+      probability: 0.08
+      effects:
+        - type: WITHER
+          duration: 80
+          amplifier: 0
+        - type: POISON
+          duration: 100
+          amplifier: 1
+      particles: PORTAL
+      particleSpeed: 0.03
+      armorDamage: true           # Zırha hasar verir
+      armorDamageChance: 0.05
+    
+    AURORA:
+      probability: 0.10
+      effects:
+        - type: REGENERATION
+          duration: 100
+          amplifier: 0
+        - type: SPEED
+          duration: 100
+          amplifier: 0
+      particles: END_ROD
+      particleSpeed: 0.03
+      colorful: true              # Renkli parçacıklar
+    
+    RADIOACTIVE:
+      probability: 0.07
+      effects:
+        - type: WITHER
+          duration: 100
+          amplifier: 1
+        - type: HUNGER
+          duration: 100
+          amplifier: 1
+      particles: ELECTRIC_SPARK
+      particleSpeed: 0.02
+      glowEffect: true
+
+# ========================================
+# UYDU VE ASTEROİD SİSTEMİ
+# ========================================
 satellites:
   enabled: true
   perPlanet:
-    minCount: 0               # Gezegen başına minimum uydu
-    maxCount: 3               # Gezegen başına maksimum uydu
-    probability: 0.6          # Uydu olma olasılığı (60%)
+    minCount: 0
+    maxCount: 3
+  probability: 0.50               # Gezegenlerin %50'sinde uydu var
   size:
-    minRadius: 30
-    maxRadius: 70
-  ring_chance: 0.2            # Halka olma olasılığı (20%)
+    minRadius: 15
+    maxRadius: 40
+  distance:
+    min: 150                      # Ana gezegenden minimum mesafe
+    max: 300                      # Ana gezegenden maximum mesafe
+  ringChance: 0.25                # Uyduların %25'inde halka var
+  orbitingParticles: true         # Yörünge parçacıkları
 
-# Planet Modifiers (for 2000+ combinations)
-modifiers:
+asteroids:
   enabled: true
-  hollow:
-    enabled: true
-    probability: 0.4              # 40% chance for hollow planets
-    shellThickness: 5             # Shell thickness in blocks
-    tunnelCount: 3                # Number of interior tunnels
-    structureTemplates:           # Civilization feeling structures
-      - "ruins_small"
-      - "lab_fragment"
-      - "alien_base_remnant"
-      - "ancient_temple"
+  perPlanet:
+    minCount: 2
+    maxCount: 8
+  size:
+    minRadius: 8
+    maxRadius: 25
+  placement:
+    minDistanceFromPlanet: 200
+    maxDistanceFromPlanet: 500
+  fieldDebris: true               # Asteroid alanı enkazı
+  fieldChance: 0.40               # %40 şans
+  fieldSize: [50, 100]            # Alan boyutu [min, max]
 
-  oreRich:
-    enabled: true
-    probability: 0.3              # 30% chance for ore-rich planets
-    multiplier: 2.0               # 2x ore density
+# ========================================
+# İLERLEME GÖSTERGESI
+# ========================================
+progressDisplay:
+  type: bossbar                   # bossbar, actionbar, chat
+  updateInterval: 100             # ms cinsinden güncelleme aralığı
+  showPercentage: true
+  showStepName: true
+  
+  colors:
+    low: RED                      # 0-33%
+    medium: YELLOW                # 34-66%
+    high: GREEN                   # 67-100%
+  
+  steps:
+    - name: "Başlatılıyor..."
+      progress: 0
+    - name: "Konum belirleniyor..."
+      progress: 5
+    - name: "Gezegen tasarlanıyor..."
+      progress: 10
+    - name: "Özellikler ekleniyor..."
+      progress: 15
+    - name: "Veritabanına kaydediliyor..."
+      progress: 20
+    - name: "Işınlanılıyor..."
+      progress: 25
+    - name: "Gezegen kabuğu oluşturuluyor..."
+      progress: 30
+    - name: "Gezegen şekilleniyor..."
+      progress: 40
+    - name: "Gezegen kabuğu tamamlandı!"
+      progress: 50
+    - name: "Madenler yerleştiriliyor..."
+      progress: 55
+    - name: "Madenler yerleştirildi!"
+      progress: 60
+    - name: "Ağaçlar dikiliyor..."
+      progress: 65
+    - name: "Ağaçlar dikildi!"
+      progress: 70
+    - name: "Yapılar inşa ediliyor..."
+      progress: 72
+    - name: "Yapılar tamamlandı!"
+      progress: 75
+    - name: "Hazineler gizleniyor..."
+      progress: 77
+    - name: "Hazineler gizlendi!"
+      progress: 80
+    - name: "Zindanlar kazılıyor..."
+      progress: 82
+    - name: "Zindanlar hazır!"
+      progress: 85
+    - name: "Asteroidler yerleştiriliyor..."
+      progress: 87
+    - name: "Asteroidler yerleştirildi!"
+      progress: 90
+    - name: "Uydular konumlandırılıyor..."
+      progress: 92
+    - name: "Uydular eklendi!"
+      progress: 95
+    - name: "Son kontroller..."
+      progress: 97
+    - name: "Son rötuşlar..."
+      progress: 99
+    - name: "Tamamlandı!"
+      progress: 100
 
-  magmaCore:
-    enabled: true
-    probability: 0.2              # 20% chance for magma core
-    coreRadius: 0.2               # Core is 20% of planet radius
+# ========================================
+# IŞINLANMA SİSTEMİ
+# ========================================
+teleportation:
+  safeTeleport: true              # Güvenli ışınlanma
+  firstSolidBlock: true           # İlk katı bloğa ışınlan
+  avoidDangerous: true            # Tehlikeli bloklardan kaçın
+  dangerousBlocks:                # Tehlikeli bloklar listesi
+    - LAVA
+    - FIRE
+    - MAGMA_BLOCK
+    - CACTUS
+    - SWEET_BERRY_BUSH
+  maxSearchDistance: 50           # Maximum arama mesafesi
+  fallbackToTop: true             # Bulamazsa en üste ışınlan
+  particleEffect: true            # Işınlanma parçacık efekti
+  soundEffect: true               # Işınlanma ses efekti
 
-  icyCore:
-    enabled: true
-    probability: 0.15             # 15% chance for icy core
-
-  antiGravity:
-    enabled: true
-    probability: 0.1              # 10% chance for anti-gravity zones
-
-# Atmospheres (8 types)
-atmospheres:
-  enabled: true
-  clear:
-    probability: 0.4
-    effects: []
-    particles: []
-    fog: false
-    glow: false
-
-  luminous:
-    probability: 0.2
-    effects:
-      - effect: NIGHT_VISION
-        amplifier: 0
-        duration: 100
-    particles: END_ROD
-    fog: false
-    glow: true
-
-  toxic:
-    probability: 0.15
-    effects:
-      - effect: POISON
-        amplifier: 1
-        duration: 80
-      - effect: SLOWNESS
-        amplifier: 0
-        duration: 100
-    particles: DRIP_LAVA
-    fog: true
-    glow: false
-
-  stormy:
-    probability: 0.1
-    effects:
-      - effect: SLOWNESS
-        amplifier: 1
-        duration: 60
-    particles: CLOUD
-    fog: true
-    glow: false
-
-  foggy:
-    probability: 0.08
-    effects:
-      - effect: BLINDNESS
-        amplifier: 0
-        duration: 40
-    particles: SUSPENDED_DEPTH
-    fog: true
-    glow: false
-
-  corrosive:
-    probability: 0.05
-    effects:
-      - effect: WITHER
-        amplifier: 0
-        duration: 60
-      - effect: POISON
-        amplifier: 2
-        duration: 100
-    particles: PORTAL
-    fog: true
-    glow: false
-
-  aurora:
-    probability: 0.03
-    effects:
-      - effect: REGENERATION
-        amplifier: 0
-        duration: 120
-    particles: END_ROD
-    fog: false
-    glow: true
-
-# Flora Themes (10 types)
-floraThemes:
-  enabled: true
-  trees:
-    probability: 0.4
-    density: 0.25
-  fungi:
-    probability: 0.2
-    density: 0.3
-  crystals:
-    probability: 0.15
-    density: 0.2
-  vines:
-    probability: 0.1
-    density: 0.35
-  moss:
-    probability: 0.08
-    density: 0.4
-  luminous_plants:
-    probability: 0.05
-    density: 0.15
-  coral:
-    probability: 0.03
-    density: 0.1
-  flowers:
-    probability: 0.02
-    density: 0.5
-  cacti:
-    probability: 0.01
-    density: 0.05
-  exotic:
-    probability: 0.005
-    density: 0.08
-
-# Structure Themes (12 types)
-structureThemes:
-  enabled: true
-  ruins:
-    probability: 0.25
-    templates: ["ruins_small", "ruins_large", "temple_ruins"]
-  temple:
-    probability: 0.15
-    templates: ["alien_temple", "crystal_temple", "void_temple"]
-  alien_base:
-    probability: 0.1
-    templates: ["alien_lab", "alien_habitat", "alien_defense"]
-  lab:
-    probability: 0.08
-    templates: ["research_lab", "bio_lab", "tech_lab"]
-  crashed_ship:
-    probability: 0.05
-    templates: ["small_ship", "medium_ship", "large_ship"]
-  fortress:
-    probability: 0.03
-    templates: ["volcanic_fortress", "ice_fortress", "crystal_fortress"]
-  spire:
-    probability: 0.02
-    templates: ["crystal_spire", "obsidian_spire", "ice_spire"]
-  dungeon:
-    probability: 0.01
-    templates: ["deep_dungeon", "ancient_dungeon", "cursed_dungeon"]
-  village:
-    probability: 0.005
-    templates: ["alien_village", "crystal_village", "fungal_village"]
-  portal:
-    probability: 0.003
-    templates: ["nether_portal", "end_portal", "void_portal"]
-  monolith:
-    probability: 0.002
-    templates: ["ancient_monolith", "crystal_monolith", "energy_monolith"]
-  citadel:
-    probability: 0.001
-    templates: ["floating_citadel", "underground_citadel", "sky_citadel"]
-
-# Satellites/Rings/Asteroids (8 types)
-satelliteSystems:
-  enabled: true
-  none:
-    probability: 0.3
-  moon:
-    probability: 0.25
-    count: [1, 1]
-    materials: [STONE, ANDESITE, DIORITE]
-  debris:
-    probability: 0.15
-    count: [3, 8]
-    materials: [COBBLESTONE, GRAVEL, DIRT]
-  asteroids:
-    probability: 0.12
-    count: [2, 5]
-    materials: [STONE, COBBLESTONE, ANDESITE]
-  ringed:
-    probability: 0.08
-    count: [8, 15]
-    materials: [STONE, COBBLESTONE, GRAVEL]
-  twin_moons:
-    probability: 0.05
-    count: [2, 2]
-    materials: [STONE, ANDESITE, GRANITE]
-  mini_moon:
-    probability: 0.03
-    count: [1, 1]
-    materials: [GLOWSTONE, SEA_LANTERN, SHROOMLIGHT]
-  planetary_system:
-    probability: 0.02
-    count: [3, 7]
-    materials: [STONE, GLOWSTONE, OBSIDIAN, DIAMOND_BLOCK]
-
-# Performans Optimizasyonu
+# ========================================
+# PERFORMANS AYARLARI
+# ========================================
 performance:
-  asyncGeneration: true             # Asenkron üretim
-
+  asyncGeneration: true           # Asenkron oluşturma
   threadPool:
-    coreSize: 8                     # Thread havuzu boyutu (2x artırıldı)
-    maxSize: 16                     # Maksimum thread sayısı (2x artırıldı)
-
+    coreSize: 8                   # Çekirdek thread sayısı
+    maxSize: 16                   # Maximum thread sayısı
+    keepAliveTime: 60             # Thread canlı tutma süresi (saniye)
+  
   batching:
-    blocksPerBatch: 1000            # Batch başına blok sayısı (4x artırıldı - çok hızlı)
-    batchesPerTick: 4               # Tick başına batch sayısı (4x artırıldı - çok hızlı)
-
-  generation:
-    shellThickness: 0                # Artık kullanılmıyor - tam dolu üretim
-    chunkPreload: true              # Chunk'ları önceden yükle
+    enabled: true
+    blocksPerBatch: 1000          # Batch başına blok sayısı
+    batchesPerTick: 4             # Tick başına batch sayısı
+    delayBetweenBatches: 1        # Batch'ler arası gecikme (tick)
   
-  worldManagement:
-    autoSave:
-      enabled: true
-      interval: 600                 # Saniye (10 dakika)
-    
-    chunkUnload:
-      enabled: true                 # Chunk unload optimizasyonu
-      delay: 200                    # Tick (10 saniye)
+  chunkPreload: true              # Chunk ön yükleme
+  preloadRadius: 3                # Ön yükleme yarıçapı (chunk)
+  
+  tpsMonitoring:
+    enabled: true
+    threshold: 18                 # TPS eşiği (altına düşerse yavaşlat)
+    throttleMultiplier: 0.5       # Yavaşlatma çarpanı
+  
+  memoryManagement:
+    enabled: true
+    maxMemoryUsage: 0.8           # Maximum bellek kullanımı (80%)
+    gcInterval: 300               # GC aralığı (saniye)
 
-# Progress Display
-progress_display:
-  type: bossbar                     # bossbar, actionbar, or chat
-  update_interval: 500              # ms between updates
+# ========================================
+# YERLEŞİM SİSTEMİ
+# ========================================
+placement:
+  worldBounds:
+    centerX: 0
+    centerZ: 0
+    maxDistance: 10000            # Spawn'dan maximum mesafe
+    minDistanceFromSpawn: 2000    # Spawn'dan minimum mesafe
+  
+  worldHeight:
+    respectLimits: true           # Dünya yükseklik limitlerini respektle
+    minYBuffer: 15                # Alt buffer
+    maxYBuffer: 15                # Üst buffer
+    defaultCenterY: 120           # Varsayılan merkez Y
+    allowAutoResize: true         # Otomatik yeniden boyutlandırma
+    maxAutoResize: 0.8            # Maximum yeniden boyutlandırma oranı
+  
+  clustering:
+    enabled: true                 # Kümeleme aktif
+    clusterMinDistance: 2000      # Küme minimum mesafe
+    clusterMaxDistance: 4000      # Küme maximum mesafe
+    centerAttraction: 0.3         # Merkeze çekim (0.0-1.0)
+  
+  overlapCheck: true              # Çakışma kontrolü
+  blockCheck: true                # Blok kontrolü
+  
+  safety:
+    checkWorldBounds: true
+    adjustRadiusIfNeeded: true
+    minPlanetRadius: 15           # Minimum gezegen yarıçapı
+    maxPlanetRadius: 100          # Maximum gezegen yarıçapı
+    maxYVariation: 15             # Y varyasyonu
 
-# Teleportation
-teleport:
-  safe_teleport: true               # Enable safe teleportation checks
-  avoid_dangerous_blocks: true      # Avoid lava, fire, etc.
-
-# Hollow Planets
-hollow:
-  enabled: true                     # Enable hollow planet generation
-  probability: 0.4                  # Chance of generating hollow planets (0.0-1.0)
-  shell_thickness: 5                # Thickness of hollow planet shell
-  interior_structures: true         # Generate civilization structures inside
-  tunnels: true                     # Generate connecting tunnels
-
-# Debug Modu
+# ========================================
+# DEBUG AYARLARI
+# ========================================
 debug:
-  enabled: false                    # Ana debug modu
-
+  enabled: false                  # Ana debug modu
+  verbose: false                  # Detaylı log
+  
   oreGeneration:
-    enabled: false                  # Ore debug
-    showCoordinates: true           # Koordinatları göster
-    showVeinSize: true              # Vein boyutunu göster
-
+    enabled: false
+    showCoordinates: true
+    showVeinSize: true
+    showBiomeBonus: true
+  
   treeGeneration:
-    enabled: false                  # Ağaç debug
+    enabled: false
+    showGroundCheck: true
     showTreeType: true
-
+  
   structureGeneration:
-    enabled: false                  # Yapı debug
+    enabled: false
     showStructureType: true
-
+    showSize: true
+  
+  dungeonGeneration:
+    enabled: false
+    showDungeonType: true
+    showLootTier: true
+  
   performanceMonitor:
-    enabled: false                  # Performans monitörü
-    logInterval: 100                # Log aralığı (tick)
+    enabled: false
+    logInterval: 100              # Log aralığı (tick)
+    showMemoryUsage: true
+    showTPS: true
+    showGenerationTime: true
 
-# Limitler
+# ========================================
+# LİMİTLER
+# ========================================
 limits:
-  planetsPerPlayer: 5               # Oyuncu başına gezegen limiti (artırıldı)
-  maxPlanetsPerWorld: 200           # Dünya başına maksimum gezegen (artırıldı)
-  deleteOwnPlanet: true             # Kendi gezegenini silebilir mi (etkinleştirildi)
-  generationCooldown: 60            # Gezegen oluşturma cooldown (saniye - azaltıldı)
+  planetsPerPlayer: 5             # Oyuncu başına gezegen limiti
+  maxPlanetsPerWorld: 500         # Dünya başına gezegen limiti
+  deleteOwnPlanet: true           # Kendi gezegenini silebilir
+  generationCooldown: 30          # Oluşturma cooldown (saniye)
+  teleportCooldown: 10            # Işınlanma cooldown (saniye)
 
-# Entegrasyonlar
-integrations:
-  vault:
-    enabled: false                  # Vault ekonomi sistemi
-    planetCreationCost: 1000.0      # Gezegen oluşturma maliyeti
-  
-  worldguard:
-    enabled: false                  # WorldGuard koruması
-    autoProtectPlanets: true        # Gezegenleri otomatik koru
-  
-  placeholderapi:
-    enabled: false                  # PlaceholderAPI
-    # Placeholders:
-    # %skyorbs_planets% - Toplam gezegen sayısı
-    # %skyorbs_player_planets% - Oyuncunun gezegen sayısı
-  
-  dynmap:
-    enabled: false                  # Dynmap entegrasyonu
-    showPlanets: true               # Gezegenleri haritada göster
-    markerIcon: "world"             # Marker ikonu
-
-# Gezegen İsimleri
-planetNames:
-  prefixes:
-    - "Nova"
-    - "Stella"
-    - "Astro"
-    - "Celest"
-    - "Nebu"
-    - "Galax"
-    - "Cosmo"
-    - "Meteor"
-    - "Lunar"
-    - "Solar"
-    - "Void"
-    - "Echo"
-    - "Zenith"
-    - "Quantum"
-    - "Ethereal"
-  
-  suffixes:
-    - "prime"
-    - "minor"
-    - "major"
-    - "core"
-    - "rim"
-    - "sphere"
-    - "world"
-    - "star"
-    - "moon"
-    - "rock"
-    - "drift"
-    - "haven"
-    - "nexus"
-    - "forge"
-    - "sanctum"
-  
-  postfixes:
-    - "Alpha"
-    - "Beta"
-    - "Gamma"
-    - "Delta"
-    - "Omega"
-    - "Prime"
-    - "Secundus"
-    - "Tertius"
-  
-  formats:
-    - "{prefix}-{suffix}"
-    - "{prefix} {suffix}"
-    - "{prefix}-{number}"
-    - "{prefix} {postfix}"
-    - "{suffix}-{number}"
-  
-  numberRange:
-    min: 1
-    max: 999
-
-# Mesajlar
+# ========================================
+# MESAJLAR (Türkçe)
+# ========================================
 messages:
-  prefix: "&8[&bGezegen&8]&r"
+  prefix: "&8[&b&lGezegen&8]&r "
   
-  # Komut mesajları
+  # Genel mesajlar
   noPermission: "&cBu komutu kullanma yetkiniz yok!"
   playerOnly: "&cBu komut sadece oyuncular tarafından kullanılabilir!"
-  configReloaded: "&aKonfigürasyon yeniden yüklendi!"
+  cooldown: "&cLütfen bekleyin! Kalan süre: &e{time} &csaniye"
   
   # Gezegen oluşturma
-  planetCreating: "&eGezegen oluşturuluyor..."
-  planetCreated: "&a&lGezegen Oluşturuldu!"
-  planetCreationFailed: "&cGezegen oluşturulamadı: {reason}"
-  noSuitableLocation: "&cUygun konum bulunamadı!"
+  planetCreating: "&eGezegen oluşturuluyor... &7(Bu biraz zaman alabilir)"
+  planetCreated: "&a&l✓ Gezegen Başarıyla Oluşturuldu!"
+  planetCreatedDetails: "&aİsim: &e{name} &7| &aŞekil: &e{shape} &7| &aBiyom: &e{biome}"
+  planetCreatedStats: "&aYarıçap: &e{radius} &7| &aAtmosfer: &e{atmosphere}"
+  planetLimitReached: "&cGezegen limitinize ulaştınız! &7(Max: {limit})"
+  worldLimitReached: "&cDünya gezegen limitine ulaşıldı! &7(Max: {limit})"
   
   # Gezegen listesi
-  listHeader: "&b&l=== Gezegenler ({count}) ==="
-  listEmpty: "&7Henüz gezegen oluşturulmamış."
+  listEmpty: "&7Henüz hiç gezegen oluşturulmamış."
+  listHeader: "&8&m                    &r &b&lGezegenler &8&m                    "
+  listEntry: "&e{name} &7- &aŞekil: &f{shape} &7| &aBiyom: &f{biome} &7| &aYarıçap: &f{radius}"
+  listFooter: "&8&m                                                      "
   
-  # Gezegen bilgi
-  planetNotFound: "&cGezegen bulunamadı: {name}"
+  # Işınlanma
+  planetNotFound: "&cGezegen bulunamadı: &e{name}"
+  teleporting: "&eGezegene ışınlanılıyor: &a{name}&e..."
+  teleported: "&a&l✓ Gezegene ışınlandınız: &e{name}"
+  teleportFailed: "&cIşınlanma başarısız! Güvenli bir konum bulunamadı."
   
-  # Teleport
-  teleported: "&aGezegene ışınlandınız: &e{name}"
+  # Gezegen silme
+  planetDeleted: "&a&l✓ Gezegen silindi: &e{name}"
+  planetDeleteFailed: "&cGezegen silinemedi!"
+  cannotDeleteOthers: "&cBaşkasının gezegenini silemezsiniz!"
   
-  # Silme
-  planetDeleting: "&eGezegen siliniyor..."
-  planetDeleted: "&aGezegen silindi: &e{name}"
+  # Config
+  configReloaded: "&a&l✓ Konfigürasyon yeniden yüklendi!"
+  configReloadFailed: "&cKonfigürasyon yüklenemedi! Konsolu kontrol edin."
   
-  # Limitler
-  planetLimitReached: "&cGezegen limitine ulaştınız! (Limit: {limit})"
-  cooldownActive: "&cGezegen oluşturmak için {time} saniye beklemelisiniz!"
-  
-  # Ekonomi
-  insufficientFunds: "&cYetersiz para! Gerekli: {cost}"
-  economyCharged: "&a{cost} para çekildi."
+  # Bilgi
+  planetInfo: "&8&m                    &r &b&lGezegen Bilgisi &8&m                    "
+  infoName: "&aİsim: &e{name}"
+  infoOwner: "&aSahip: &e{owner}"
+  infoShape: "&aŞekil: &e{shape}"
+  infoBiome: "&aBiyom: &e{biome}"
+  infoRadius: "&aYarıçap: &e{radius} blok"
+  infoAtmosphere: "&aAtmosfer: &e{atmosphere}"
+  infoModifiers: "&aModifierler: &e{modifiers}"
+  infoCoordinates: "&aKoordinatlar: &eX:{x} Y:{y} Z:{z}"
+  infoCreated: "&aOluşturulma: &e{date}"

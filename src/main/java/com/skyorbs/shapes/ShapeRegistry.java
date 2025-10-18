@@ -31,6 +31,18 @@ public class ShapeRegistry {
         register(new CometShape());
         register(new CrescentShape());
         register(new HybridShape());
+        
+        // NEW: Diverse shapes (10 more) - 28 TOTAL!
+        register(new LayeredShape());
+        register(new CrateredShape());
+        register(new HoneycombShape());
+        register(new SpiralShape());
+        register(new WaveShape());
+        register(new CrystalShape());
+        register(new OrganicShape());
+        register(new GeometricShape());
+        register(new NebulaShape());
+        register(new AsteroidFieldShape());
     }
     
     public void register(PlanetShape shape) {

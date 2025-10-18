@@ -157,71 +157,25 @@ public class GenerationManager {
                 generatePlanetShellAsync(world, orb, shape, biome, () -> {
                     progress[0]++;
                     sendProgress.run();
-                    player.sendMessage("§eGezegen kabuğu tamamlandı! Şimdi özellikler ekleniyor...");
+                    
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        player.sendMessage("§eGezegen kabuğu tamamlandı! Şimdi özellikler ekleniyor...");
+                    });
 
                     try {
-                        // Paralel asteroid üretimi
-                        List<CompletableFuture<Void>> asteroidFutures = new ArrayList<>();
-                        List<Orb> asteroids = asteroidGenerator.generateAsteroidsForPlanet(orb, world);
-                        for (Orb asteroid : asteroids) {
-                            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                                try {
-                                    PlanetShape asteroidShape = plugin.getShapeRegistry().getShape(asteroid.getShapeName());
-                                    BiomeType asteroidBiome = BiomeType.valueOf(asteroid.getBiomeName());
-                                    generatePlanetShellAsync(world, asteroid, asteroidShape, asteroidBiome, null);
-                                    plugin.getDatabaseManager().saveOrb(asteroid);
-                                } catch (Exception e) {
-                                    plugin.logError("Asteroid hatası", e);
-                                }
-                            }, executor);
-                            asteroidFutures.add(future);
-                        }
-
-                        // Paralel satellite üretimi
-                        List<CompletableFuture<Void>> satelliteFutures = new ArrayList<>();
-                        List<Orb> satellites = satelliteGenerator.generateSatellitesForPlanet(orb, world);
-                        for (Orb satellite : satellites) {
-                            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                                try {
-                                    PlanetShape satelliteShape = plugin.getShapeRegistry().getShape(satellite.getShapeName());
-                                    BiomeType satelliteBiome = BiomeType.valueOf(satellite.getBiomeName());
-                                    generatePlanetShellAsync(world, satellite, satelliteShape, satelliteBiome, null);
-                                    plugin.getDatabaseManager().saveOrb(satellite);
-                                } catch (Exception e) {
-                                    plugin.logError("Satellite hatası", e);
-                                }
-                            }, executor);
-                            satelliteFutures.add(future);
-                        }
-
-                        // Generate planetary rings if applicable
-                        satelliteGenerator.generateRingsForPlanet(orb, world);
-
-                        // Tüm paralel işlemleri bekle
-                        CompletableFuture.allOf(
-                            asteroidFutures.toArray(new CompletableFuture[0])
-                        ).join();
-
-                        CompletableFuture.allOf(
-                            satelliteFutures.toArray(new CompletableFuture[0])
-                        ).join();
-
-                        // ORE'LAR EN SON - GEZEGEN BLOKLARINDAN SONRA!
-                        progress[0]++;
-                        sendProgress.run();
-                        player.sendMessage("§eMadenciler çalışıyor...");
-
                         // ORE GENERATION - GEZEGEN BLOKLARINDAN SONRA!
                         progress[0]++;
                         sendProgress.run();
-                        player.sendMessage("§eMadenciler çalışıyor...");
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            player.sendMessage("§eMadenciler çalışıyor...");
+                        });
 
                         List<OreGenerator.BlockData> ores = OreGenerator.generateOres(orb, biome, world);
                         List<BlockPlacement> oreBlocks = new ArrayList<>();
                         for (OreGenerator.BlockData ore : ores) {
                             oreBlocks.add(new BlockPlacement(ore.x, ore.y, ore.z, ore.material));
                         }
-                        placeBlocksInBatches(world, oreBlocks, null);
+                        placeBlocksInBatches(world, oreBlocks, null, true); // allowReplacement = true for ores
 
                         // AĞAÇ GENERATION
                         progress[0]++;
@@ -265,12 +219,36 @@ public class GenerationManager {
                         // DUNGEON GENERATION
                         progress[0]++;
                         sendProgress.run();
-                        player.sendMessage("§eZindanlar oluşturuluyor...");
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            player.sendMessage("§eZindanlar oluşturuluyor...");
+                        });
 
                         // Generate dungeons inside planet
-                        int dungeonCount = Math.max(1, radius / 8); // 1 dungeon per 8 radius units - DAHA FAZLA DUNGEON
-                        List<com.skyorbs.dungeons.DungeonGenerator.DungeonRoom> dungeons = plugin.getDungeonGenerator().generateDungeons(orb, dungeonCount);
-                        // Dungeons are already generated in the world by the DungeonGenerator
+                        int dungeonCount = Math.max(1, radius / 8);
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            List<com.skyorbs.dungeons.DungeonGenerator.DungeonRoom> dungeons = 
+                                plugin.getDungeonGenerator().generateDungeons(orb, dungeonCount);
+                        });
+
+                        // YENİ: YÜZEY DETAYLARI - Kraterler, kalıntılar, işaretler
+                        progress[0]++;
+                        sendProgress.run();
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            player.sendMessage("§eYüzey detayları ekleniyor...");
+                        });
+                        
+                        generateSurfaceDetails(world, orb, biome, random);
+
+                        // YENİ: HALKALAR - Bazı gezegenlerde
+                        if (random.nextDouble() < 0.25) { // %25 şans
+                            progress[0]++;
+                            sendProgress.run();
+                            Bukkit.getScheduler().runTask(plugin, () -> {
+                                player.sendMessage("§eGezegen halkaları oluşturuluyor...");
+                            });
+                            
+                            generatePlanetaryRings(world, orb, random);
+                        }
 
                         // Save main planet
                         plugin.getDatabaseManager().saveOrb(orb);
@@ -674,6 +652,14 @@ public class GenerationManager {
      * Blokları batch'ler halinde yerleştirir (chunk-aware) - OPTIMIZE EDILDI
      */
     private void placeBlocksInBatches(World world, List<BlockPlacement> blocks, Runnable callback) {
+        placeBlocksInBatches(world, blocks, callback, false);
+    }
+
+    /**
+     * Blokları batch'ler halinde yerleştirir (chunk-aware) - OPTIMIZE EDILDI
+     * @param allowReplacement Eğer true ise mevcut blokları değiştirir (ore'lar için)
+     */
+    private void placeBlocksInBatches(World world, List<BlockPlacement> blocks, Runnable callback, boolean allowReplacement) {
         int batchSize = plugin.getConfigManager().getBlocksPerBatch(); // Config'den oku
         int totalBatches = (blocks.size() + batchSize - 1) / batchSize;
 
@@ -705,7 +691,7 @@ public class GenerationManager {
                 for (BlockPlacement bp : batch) {
                     try {
                         Block block = world.getBlockAt(bp.x, bp.y, bp.z);
-                        if (block.getType() == Material.AIR || block.getType() == Material.CAVE_AIR) {
+                        if (allowReplacement || block.getType() == Material.AIR || block.getType() == Material.CAVE_AIR) {
                             block.setType(bp.material, false);
                         }
                     } catch (Exception e) {
@@ -812,6 +798,233 @@ public class GenerationManager {
                material == Material.CACTUS ||
                material == Material.SWEET_BERRY_BUSH ||
                material.name().contains("MAGMA");
+    }
+
+    /**
+     * YENİ: Yüzey detayları - Kraterler, kalıntılar, işaretler
+     */
+    private void generateSurfaceDetails(World world, Orb orb, BiomeType biome, Random random) {
+        int cx = orb.getCenterX();
+        int cy = orb.getCenterY();
+        int cz = orb.getCenterZ();
+        int radius = orb.getRadius();
+        
+        List<BlockPlacement> surfaceBlocks = new ArrayList<>();
+        
+        // 1. KRATERLER - Çarpma izleri
+        int craterCount = 3 + random.nextInt(5);
+        for (int i = 0; i < craterCount; i++) {
+            generateCrater(surfaceBlocks, cx, cy, cz, radius, random);
+        }
+        
+        // 2. YÜZEY YAPILARI - Eski uygarlık kalıntıları
+        int ruinCount = 2 + random.nextInt(3);
+        for (int i = 0; i < ruinCount; i++) {
+            generateSurfaceRuin(surfaceBlocks, cx, cy, cz, radius, biome, random);
+        }
+        
+        // 3. İŞARETLER - Beacon, totem, anıtlar
+        int monumentCount = 1 + random.nextInt(2);
+        for (int i = 0; i < monumentCount; i++) {
+            generateMonument(surfaceBlocks, cx, cy, cz, radius, biome, random);
+        }
+        
+        // 4. YÜZEY DETAYLARI - Kayalar, kristaller
+        int detailCount = 10 + random.nextInt(20);
+        for (int i = 0; i < detailCount; i++) {
+            generateSurfaceDetail(surfaceBlocks, cx, cy, cz, radius, biome, random);
+        }
+        
+        // Blokları yerleştir
+        placeBlocksInBatches(world, surfaceBlocks, null);
+    }
+    
+    /**
+     * Krater oluştur
+     */
+    private void generateCrater(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, Random random) {
+        // Yüzeyde rastgele konum
+        double angle1 = random.nextDouble() * Math.PI * 2;
+        double angle2 = (random.nextDouble() - 0.5) * Math.PI / 2;
+        
+        int craterX = cx + (int)(Math.cos(angle1) * Math.cos(angle2) * radius);
+        int craterY = cy + (int)(Math.sin(angle2) * radius);
+        int craterZ = cz + (int)(Math.sin(angle1) * Math.cos(angle2) * radius);
+        
+        int craterRadius = 3 + random.nextInt(5);
+        int craterDepth = 2 + random.nextInt(3);
+        
+        // Krater çukuru
+        for (int x = -craterRadius; x <= craterRadius; x++) {
+            for (int z = -craterRadius; z <= craterRadius; z++) {
+                double dist = Math.sqrt(x * x + z * z);
+                if (dist <= craterRadius) {
+                    int depth = (int)(craterDepth * (1 - dist / craterRadius));
+                    for (int y = 0; y < depth; y++) {
+                        blocks.add(new BlockPlacement(craterX + x, craterY - y, craterZ + z, Material.AIR));
+                    }
+                    // Krater kenarı - yükseltilmiş
+                    if (dist > craterRadius - 2 && dist <= craterRadius) {
+                        blocks.add(new BlockPlacement(craterX + x, craterY + 1, craterZ + z, Material.COBBLESTONE));
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Yüzey kalıntısı oluştur
+     */
+    private void generateSurfaceRuin(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, BiomeType biome, Random random) {
+        double angle1 = random.nextDouble() * Math.PI * 2;
+        double angle2 = (random.nextDouble() - 0.5) * Math.PI / 2;
+        
+        int ruinX = cx + (int)(Math.cos(angle1) * Math.cos(angle2) * radius);
+        int ruinY = cy + (int)(Math.sin(angle2) * radius);
+        int ruinZ = cz + (int)(Math.sin(angle1) * Math.cos(angle2) * radius);
+        
+        Material ruinMat = getBiomeWallMaterial(biome);
+        
+        // Küçük yıkık yapı (3x3)
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                if (random.nextDouble() < 0.6) { // Bazı bloklar eksik
+                    blocks.add(new BlockPlacement(ruinX + x, ruinY + 1, ruinZ + z, ruinMat));
+                    if (random.nextDouble() < 0.3) {
+                        blocks.add(new BlockPlacement(ruinX + x, ruinY + 2, ruinZ + z, ruinMat));
+                    }
+                }
+            }
+        }
+        
+        // Merkeze sandık
+        blocks.add(new BlockPlacement(ruinX, ruinY + 1, ruinZ, Material.CHEST));
+    }
+    
+    /**
+     * Anıt oluştur
+     */
+    private void generateMonument(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, BiomeType biome, Random random) {
+        double angle1 = random.nextDouble() * Math.PI * 2;
+        double angle2 = (random.nextDouble() - 0.5) * Math.PI / 2;
+        
+        int monX = cx + (int)(Math.cos(angle1) * Math.cos(angle2) * radius);
+        int monY = cy + (int)(Math.sin(angle2) * radius);
+        int monZ = cz + (int)(Math.sin(angle1) * Math.cos(angle2) * radius);
+        
+        // Dikey anıt (totem benzeri)
+        Material pillarMat = Material.QUARTZ_PILLAR;
+        int height = 5 + random.nextInt(5);
+        
+        for (int y = 1; y <= height; y++) {
+            blocks.add(new BlockPlacement(monX, monY + y, monZ, pillarMat));
+        }
+        
+        // Üste beacon veya glowstone
+        blocks.add(new BlockPlacement(monX, monY + height + 1, monZ, Material.BEACON));
+        
+        // Etrafına platform
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                if (x != 0 || z != 0) {
+                    blocks.add(new BlockPlacement(monX + x, monY + 1, monZ + z, Material.STONE_BRICKS));
+                }
+            }
+        }
+    }
+    
+    /**
+     * Yüzey detayı oluştur
+     */
+    private void generateSurfaceDetail(List<BlockPlacement> blocks, int cx, int cy, int cz, int radius, BiomeType biome, Random random) {
+        double angle1 = random.nextDouble() * Math.PI * 2;
+        double angle2 = (random.nextDouble() - 0.5) * Math.PI / 2;
+        
+        int detailX = cx + (int)(Math.cos(angle1) * Math.cos(angle2) * radius);
+        int detailY = cy + (int)(Math.sin(angle2) * radius);
+        int detailZ = cz + (int)(Math.sin(angle1) * Math.cos(angle2) * radius);
+        
+        // Biyoma göre detay
+        Material detailMat = switch (biome) {
+            case CRYSTAL_FOREST, CRYSTALLINE -> Material.AMETHYST_CLUSTER;
+            case LAVA_OCEAN, MAGMA_CAVES -> Material.MAGMA_BLOCK;
+            case FROZEN_TUNDRA, GLACIER -> Material.ICE;
+            case DESERT, BADLANDS -> Material.CACTUS;
+            default -> Material.COBBLESTONE;
+        };
+        
+        // Küçük kaya veya kristal kümesi
+        blocks.add(new BlockPlacement(detailX, detailY + 1, detailZ, detailMat));
+        if (random.nextDouble() < 0.3) {
+            blocks.add(new BlockPlacement(detailX, detailY + 2, detailZ, detailMat));
+        }
+    }
+    
+    /**
+     * YENİ: Gezegen halkaları oluştur
+     */
+    private void generatePlanetaryRings(World world, Orb orb, Random random) {
+        int cx = orb.getCenterX();
+        int cy = orb.getCenterY();
+        int cz = orb.getCenterZ();
+        int radius = orb.getRadius();
+        
+        List<BlockPlacement> ringBlocks = new ArrayList<>();
+        
+        // Halka sayısı (1-3)
+        int ringCount = 1 + random.nextInt(3);
+        
+        for (int ringIndex = 0; ringIndex < ringCount; ringIndex++) {
+            // Halka parametreleri
+            double ringInnerRadius = radius * (1.3 + ringIndex * 0.3);
+            double ringOuterRadius = ringInnerRadius + radius * 0.2;
+            double ringThickness = 1 + random.nextInt(2);
+            
+            // Halka malzemesi
+            Material ringMat = getRingMaterial(random);
+            
+            // Halka açısı (ekvator etrafında)
+            double tiltAngle = (random.nextDouble() - 0.5) * Math.PI / 6; // ±15 derece
+            
+            // Halka oluştur
+            for (double angle = 0; angle < Math.PI * 2; angle += 0.05) {
+                for (double r = ringInnerRadius; r < ringOuterRadius; r += 0.5) {
+                    // Rastgele boşluklar (daha gerçekçi)
+                    if (random.nextDouble() < 0.3) continue;
+                    
+                    int x = cx + (int)(Math.cos(angle) * r);
+                    int z = cz + (int)(Math.sin(angle) * r);
+                    
+                    // Y pozisyonu (tilt ile)
+                    int y = cy + (int)(Math.sin(tiltAngle) * (x - cx));
+                    
+                    // Kalınlık
+                    for (int dy = 0; dy < ringThickness; dy++) {
+                        ringBlocks.add(new BlockPlacement(x, y + dy, z, ringMat));
+                    }
+                }
+            }
+        }
+        
+        // Halka bloklarını yerleştir
+        placeBlocksInBatches(world, ringBlocks, null);
+    }
+    
+    /**
+     * Halka malzemesi seç
+     */
+    private Material getRingMaterial(Random random) {
+        Material[] ringMaterials = {
+            Material.ICE,
+            Material.PACKED_ICE,
+            Material.SNOW_BLOCK,
+            Material.QUARTZ_BLOCK,
+            Material.STONE,
+            Material.COBBLESTONE,
+            Material.ANDESITE,
+            Material.DIORITE
+        };
+        return ringMaterials[random.nextInt(ringMaterials.length)];
     }
 
     public void shutdown() {

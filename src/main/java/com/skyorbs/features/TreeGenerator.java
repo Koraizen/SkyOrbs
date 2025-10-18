@@ -4,6 +4,7 @@ import com.skyorbs.biomes.BiomeType;
 import com.skyorbs.core.Orb;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,58 +15,67 @@ public class TreeGenerator {
     public static List<OreGenerator.BlockData> generateTrees(Orb orb, BiomeType biome, World world) {
         List<OreGenerator.BlockData> blocks = new ArrayList<>();
         Random random = new Random(orb.getSeed() + 456);
-        
+
         int cx = orb.getCenterX();
         int cy = orb.getCenterY();
         int cz = orb.getCenterZ();
         int radius = orb.getRadius();
-        
-        // Biyom bazlı ağaç yoğunluğu - DAHA FAZLA AĞAÇ İÇİN ÇARPAN
+
+        // Get tree config
         TreeConfig config = getTreeConfig(biome);
         if (config == null) return blocks;
 
-        double treeMultiplier = 2.0; // 2x daha fazla ağaç
+        double treeMultiplier = 2.0;
         int treeCount = (int)(radius * config.density * treeMultiplier);
-        
+
         for (int i = 0; i < treeCount; i++) {
             int x = cx + random.nextInt(radius * 2) - radius;
             int z = cz + random.nextInt(radius * 2) - radius;
 
-            // YÜZEYDE SPAWN ET - ZEMİNE DEĞMESİ İÇİN!
-            int y = findGroundLevel(cx, cy, cz, x, z, radius);
+            // FIXED: Pass world for ground checking
+            int y = findGroundLevel(cx, cy, cz, x, z, radius, world);
 
-            if (y == -1) continue; // Uygun yer bulunamadıysa atla
+            if (y == -1) continue;
 
-            // Ağaç türünü seç
             TreeType type = config.getRandomType(random);
-
-            // Ağacı oluştur
-            generateTree(blocks, x, y, z, type, random);
+            generateTree(blocks, x, y + 1, z, type, random); // +1 to spawn above ground
         }
-        
+
         return blocks;
     }
 
     /**
-     * Find appropriate ground level for trees - ensure they are grounded on solid blocks
+     * IMPROVED: Find ground level with raycast from top to bottom
+     * Ensures trees spawn on actual solid blocks
      */
-    private static int findGroundLevel(int cx, int cy, int cz, int x, int z, int radius) {
-        // Start from planet surface and go downward to find solid ground
-        for (int y = cy + radius; y >= cy - radius; y--) {
-            double distance = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy) + (z - cz) * (z - cz));
+    private static int findGroundLevel(int cx, int cy, int cz, int x, int z, int radius, World world) {
+        // Start from top of planet and raycast downward
+        int searchStartY = cy + radius + 5;
+        int searchEndY = cy - radius;
 
-            // Check if we're in the surface layer of the planet
-            if (distance <= radius && distance >= radius - 3) { // Surface layer
-                // Check downward from this position to find actual solid ground
-                for (int checkY = y; checkY >= cy - radius; checkY--) {
-                    double checkDistance = Math.sqrt((x - cx) * (x - cx) + (checkY - cy) * (checkY - cy) + (z - cz) * (z - cz));
+        Block previousBlock = null;
 
-                    // If we find a solid block within planet volume, that's our ground
-                    if (checkDistance <= radius - 1) { // Inside solid volume
-                        return checkY;
-                    }
+        for (int y = searchStartY; y >= searchEndY; y--) {
+            Block currentBlock = world.getBlockAt(x, y, z);
+
+            // Check if we found ground (solid block with air above)
+            if (currentBlock.getType().isSolid() &&
+                (previousBlock == null || previousBlock.getType() == Material.AIR || previousBlock.getType() == Material.CAVE_AIR)) {
+
+                // Verify this is actually on planet surface
+                double distanceFromCenter = Math.sqrt(
+                    (x - cx) * (x - cx) +
+                    (y - cy) * (y - cy) +
+                    (z - cz) * (z - cz)
+                );
+
+                // Must be on or near surface (within 3 blocks of radius)
+                if (distanceFromCenter >= radius - 3 && distanceFromCenter <= radius + 1) {
+                    return y;
                 }
             }
+
+            previousBlock = currentBlock;
         }
 
         return -1; // No suitable ground found
