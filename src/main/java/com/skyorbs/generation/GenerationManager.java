@@ -222,14 +222,17 @@ public class GenerationManager {
                 player.sendMessage("§eHazinelar gizleniyor...");
 
                 List<TreasureGenerator.TreasureLocation> treasures = TreasureGenerator.generateTreasures(orb, biome, world);
-                for (TreasureGenerator.TreasureLocation treasure : treasures) {
-                    // Place chest
-                    Block chestBlock = world.getBlockAt(treasure.x, treasure.y, treasure.z);
-                    chestBlock.setType(Material.CHEST, false);
-                    if (chestBlock.getState() instanceof Chest chest) {
-                        TreasureGenerator.fillTreasureChest(chestBlock, treasure.biome, treasure.type, new Random(orb.getSeed() + treasure.x + treasure.y + treasure.z));
+                // FIXED: Treasure chest placement must be in main thread to avoid "Asynchronous block remove" error
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    for (TreasureGenerator.TreasureLocation treasure : treasures) {
+                        // Place chest
+                        Block chestBlock = world.getBlockAt(treasure.x, treasure.y, treasure.z);
+                        chestBlock.setType(Material.CHEST, false);
+                        if (chestBlock.getState() instanceof Chest chest) {
+                            TreasureGenerator.fillTreasureChest(chestBlock, treasure.biome, treasure.type, new Random(orb.getSeed() + treasure.x + treasure.y + treasure.z));
+                        }
                     }
-                }
+                });
 
                 // DUNGEON GENERATION
                 progress[0]++;
