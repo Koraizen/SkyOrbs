@@ -21,6 +21,11 @@ public class TreeGenerator {
         int cz = orb.getCenterZ();
         int radius = orb.getRadius();
 
+        // Only generate trees in hollow planets
+        if (!orb.getModifiers().contains(com.skyorbs.modifiers.PlanetModifier.HOLLOW)) {
+            return blocks;
+        }
+
         // Get tree config
         TreeConfig config = getTreeConfig(biome);
         if (config == null) return blocks;
@@ -217,7 +222,7 @@ public class TreeGenerator {
     /**
      * Ağaç türleri
      */
-    private enum TreeType {
+    public enum TreeType {
         OAK(Material.OAK_LOG, Material.OAK_LEAVES, 4, 6, 2, 4),
         BIRCH(Material.BIRCH_LOG, Material.BIRCH_LEAVES, 5, 7, 2, 4),
         SPRUCE(Material.SPRUCE_LOG, Material.SPRUCE_LEAVES, 6, 10, 2, 5),
@@ -230,14 +235,14 @@ public class TreeGenerator {
         PINE(Material.SPRUCE_LOG, Material.SPRUCE_LEAVES, 8, 12, 2, 6),
         GIANT_MUSHROOM_RED(Material.MUSHROOM_STEM, Material.RED_MUSHROOM_BLOCK, 4, 6, 3, 5),
         GIANT_MUSHROOM_BROWN(Material.MUSHROOM_STEM, Material.BROWN_MUSHROOM_BLOCK, 4, 6, 3, 5);
-        
-        final Material logMaterial;
-        final Material leafMaterial;
-        final int minHeight;
-        final int maxHeight;
-        final int leafRadius;
-        final int leafLayers;
-        
+
+        public final Material logMaterial;
+        public final Material leafMaterial;
+        public final int minHeight;
+        public final int maxHeight;
+        public final int leafRadius;
+        public final int leafLayers;
+
         TreeType(Material log, Material leaf, int minH, int maxH, int leafR, int leafL) {
             this.logMaterial = log;
             this.leafMaterial = leaf;
@@ -251,31 +256,31 @@ public class TreeGenerator {
     /**
      * Biyom ağaç konfigürasyonu
      */
-    private static class TreeConfig {
-        final double density;
-        final TreeType[] types;
-        final double[] weights;
-        
-        TreeConfig(double density, TreeType[] types, double[] weights) {
+    public static class TreeConfig {
+        public final double density;
+        public final TreeType[] types;
+        public final double[] weights;
+
+        public TreeConfig(double density, TreeType[] types, double[] weights) {
             this.density = density;
             this.types = types;
             this.weights = weights;
         }
-        
-        TreeType getRandomType(Random random) {
+
+        public TreeType getRandomType(Random random) {
             double total = 0;
             for (double w : weights) total += w;
-            
+
             double rand = random.nextDouble() * total;
             double current = 0;
-            
+
             for (int i = 0; i < types.length; i++) {
                 current += weights[i];
                 if (rand <= current) {
                     return types[i];
                 }
             }
-            
+
             return types[0];
         }
     }

@@ -26,7 +26,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("basaltic", "Bazaltik",
             new Material[]{Material.BASALT, Material.BLACKSTONE, Material.SMOOTH_BASALT},
             new Material[]{Material.BLACKSTONE, Material.DEEPSLATE, Material.BASALT},
-            new Material[]{Material.DEEPSLATE, Material.BLACKSTONE, Material.MAGMA_BLOCK},
+            new Material[]{Material.BASALT, Material.BLACKSTONE, Material.SMOOTH_BASALT},
             new Material[]{Material.MAGMA_BLOCK, Material.LAVA},
             10.0));
         
@@ -34,7 +34,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("crystalline", "Kristal",
             new Material[]{Material.AMETHYST_BLOCK, Material.QUARTZ_BLOCK, Material.PURPUR_BLOCK},
             new Material[]{Material.QUARTZ_BLOCK, Material.CALCITE, Material.DRIPSTONE_BLOCK},
-            new Material[]{Material.DIAMOND_BLOCK, Material.EMERALD_BLOCK, Material.AMETHYST_BLOCK},
+            new Material[]{Material.AMETHYST_BLOCK, Material.QUARTZ_BLOCK, Material.PURPUR_BLOCK},
             new Material[]{Material.GLOWSTONE, Material.SEA_LANTERN},
             8.0));
         
@@ -42,7 +42,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("fungal", "Mantarlı",
             new Material[]{Material.MYCELIUM, Material.BROWN_MUSHROOM_BLOCK, Material.RED_MUSHROOM_BLOCK},
             new Material[]{Material.DIRT, Material.PODZOL, Material.MYCELIUM},
-            new Material[]{Material.STONE, Material.DIRT, Material.COARSE_DIRT},
+            new Material[]{Material.MYCELIUM, Material.BROWN_MUSHROOM_BLOCK, Material.RED_MUSHROOM_BLOCK},
             new Material[]{Material.MUSHROOM_STEM, Material.SHROOMLIGHT},
             9.0));
         
@@ -50,7 +50,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("coral", "Mercan",
             new Material[]{Material.BRAIN_CORAL_BLOCK, Material.TUBE_CORAL_BLOCK, Material.BUBBLE_CORAL_BLOCK},
             new Material[]{Material.HORN_CORAL_BLOCK, Material.FIRE_CORAL_BLOCK, Material.PRISMARINE},
-            new Material[]{Material.PRISMARINE, Material.DARK_PRISMARINE, Material.STONE},
+            new Material[]{Material.BRAIN_CORAL_BLOCK, Material.TUBE_CORAL_BLOCK, Material.BUBBLE_CORAL_BLOCK},
             new Material[]{Material.SEA_LANTERN, Material.PRISMARINE_BRICKS},
             7.0));
         
@@ -58,7 +58,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("toxic", "Zehirli",
             new Material[]{Material.GREEN_CONCRETE, Material.LIME_CONCRETE, Material.SLIME_BLOCK},
             new Material[]{Material.GREEN_TERRACOTTA, Material.LIME_TERRACOTTA, Material.MOSS_BLOCK},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.SCULK},
+            new Material[]{Material.GREEN_CONCRETE, Material.LIME_CONCRETE, Material.SLIME_BLOCK},
             new Material[]{Material.SLIME_BLOCK, Material.HONEY_BLOCK},
             6.0));
         
@@ -66,7 +66,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("frozen", "Donmuş",
             new Material[]{Material.SNOW_BLOCK, Material.PACKED_ICE, Material.ICE},
             new Material[]{Material.PACKED_ICE, Material.BLUE_ICE, Material.ICE},
-            new Material[]{Material.BLUE_ICE, Material.PACKED_ICE, Material.STONE},
+            new Material[]{Material.SNOW_BLOCK, Material.PACKED_ICE, Material.ICE},
             new Material[]{Material.FROSTED_ICE, Material.POWDER_SNOW},
             8.0));
         
@@ -74,7 +74,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("volcanic", "Volkanik",
             new Material[]{Material.MAGMA_BLOCK, Material.NETHERRACK, Material.BLACKSTONE},
             new Material[]{Material.NETHERRACK, Material.BASALT, Material.BLACKSTONE},
-            new Material[]{Material.LAVA, Material.MAGMA_BLOCK, Material.NETHERRACK},
+            new Material[]{Material.MAGMA_BLOCK, Material.NETHERRACK, Material.BLACKSTONE},
             new Material[]{Material.FIRE, Material.LAVA},
             7.0));
         
@@ -82,7 +82,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("verdant", "Yeşil",
             new Material[]{Material.GRASS_BLOCK, Material.MOSS_BLOCK, Material.FLOWERING_AZALEA_LEAVES},
             new Material[]{Material.DIRT, Material.ROOTED_DIRT, Material.MOSS_BLOCK},
-            new Material[]{Material.STONE, Material.DIRT, Material.CLAY},
+            new Material[]{Material.GRASS_BLOCK, Material.MOSS_BLOCK, Material.FLOWERING_AZALEA_LEAVES},
             new Material[]{Material.AZALEA, Material.FLOWERING_AZALEA},
             10.0));
         
@@ -90,7 +90,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("desert", "Çöl",
             new Material[]{Material.SAND, Material.RED_SAND, Material.SANDSTONE},
             new Material[]{Material.SANDSTONE, Material.RED_SANDSTONE, Material.SAND},
-            new Material[]{Material.STONE, Material.SANDSTONE, Material.TERRACOTTA},
+            new Material[]{Material.SAND, Material.RED_SAND, Material.SANDSTONE},
             new Material[]{Material.DEAD_BUSH, Material.CACTUS},
             9.0));
         
@@ -98,7 +98,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("metallic", "Metalik",
             new Material[]{Material.IRON_BLOCK, Material.COPPER_BLOCK, Material.WEATHERED_COPPER},
             new Material[]{Material.IRON_BLOCK, Material.EXPOSED_COPPER, Material.OXIDIZED_COPPER},
-            new Material[]{Material.IRON_BLOCK, Material.GOLD_BLOCK, Material.NETHERITE_BLOCK},
+            new Material[]{Material.IRON_BLOCK, Material.COPPER_BLOCK, Material.WEATHERED_COPPER},
             new Material[]{Material.IRON_BARS, Material.CHAIN},
             5.0));
         
@@ -106,7 +106,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("void", "Boşluk",
             new Material[]{Material.END_STONE, Material.OBSIDIAN, Material.CRYING_OBSIDIAN},
             new Material[]{Material.OBSIDIAN, Material.END_STONE, Material.BLACKSTONE},
-            new Material[]{Material.OBSIDIAN, Material.CRYING_OBSIDIAN, Material.NETHERITE_BLOCK},
+            new Material[]{Material.OBSIDIAN, Material.END_STONE, Material.BLACKSTONE},
             new Material[]{Material.ENDER_CHEST, Material.END_ROD},
             4.0));
         
@@ -114,7 +114,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("luminous", "Parlak",
             new Material[]{Material.GLOWSTONE, Material.SEA_LANTERN, Material.SHROOMLIGHT},
             new Material[]{Material.GLOWSTONE, Material.OCHRE_FROGLIGHT, Material.VERDANT_FROGLIGHT},
-            new Material[]{Material.GLOWSTONE, Material.PEARLESCENT_FROGLIGHT, Material.QUARTZ_BLOCK},
+            new Material[]{Material.GLOWSTONE, Material.SEA_LANTERN, Material.SHROOMLIGHT},
             new Material[]{Material.TORCH, Material.LANTERN},
             5.0));
         
@@ -122,7 +122,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("warped", "Çarpık",
             new Material[]{Material.WARPED_NYLIUM, Material.WARPED_WART_BLOCK, Material.WARPED_STEM},
             new Material[]{Material.WARPED_NYLIUM, Material.NETHERRACK, Material.SOUL_SOIL},
-            new Material[]{Material.NETHERRACK, Material.SOUL_SOIL, Material.BLACKSTONE},
+            new Material[]{Material.WARPED_NYLIUM, Material.WARPED_WART_BLOCK, Material.WARPED_STEM},
             new Material[]{Material.WARPED_ROOTS, Material.WARPED_FUNGUS},
             6.0));
         
@@ -130,7 +130,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("crimson", "Kızıl",
             new Material[]{Material.CRIMSON_NYLIUM, Material.CRIMSON_STEM, Material.NETHER_WART_BLOCK},
             new Material[]{Material.CRIMSON_NYLIUM, Material.NETHERRACK, Material.SOUL_SAND},
-            new Material[]{Material.NETHERRACK, Material.SOUL_SAND, Material.BLACKSTONE},
+            new Material[]{Material.CRIMSON_NYLIUM, Material.CRIMSON_STEM, Material.NETHER_WART_BLOCK},
             new Material[]{Material.CRIMSON_ROOTS, Material.CRIMSON_FUNGUS},
             6.0));
         
@@ -138,7 +138,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("sandstone", "Kumtaşı",
             new Material[]{Material.SANDSTONE, Material.SMOOTH_SANDSTONE, Material.CHISELED_SANDSTONE},
             new Material[]{Material.SANDSTONE, Material.CUT_SANDSTONE, Material.SAND},
-            new Material[]{Material.STONE, Material.SANDSTONE, Material.TERRACOTTA},
+            new Material[]{Material.SANDSTONE, Material.SMOOTH_SANDSTONE, Material.CHISELED_SANDSTONE},
             new Material[]{Material.SANDSTONE_STAIRS, Material.SANDSTONE_SLAB},
             7.0));
         
@@ -146,7 +146,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("terracotta", "Kil",
             new Material[]{Material.ORANGE_TERRACOTTA, Material.RED_TERRACOTTA, Material.YELLOW_TERRACOTTA},
             new Material[]{Material.BROWN_TERRACOTTA, Material.WHITE_TERRACOTTA, Material.LIGHT_GRAY_TERRACOTTA},
-            new Material[]{Material.TERRACOTTA, Material.CLAY, Material.STONE},
+            new Material[]{Material.ORANGE_TERRACOTTA, Material.RED_TERRACOTTA, Material.YELLOW_TERRACOTTA},
             new Material[]{Material.FLOWER_POT, Material.BRICK},
             8.0));
         
@@ -154,7 +154,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("concrete", "Beton",
             new Material[]{Material.LIGHT_GRAY_CONCRETE, Material.GRAY_CONCRETE, Material.WHITE_CONCRETE},
             new Material[]{Material.GRAY_CONCRETE, Material.STONE, Material.ANDESITE},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.STONE},
+            new Material[]{Material.LIGHT_GRAY_CONCRETE, Material.GRAY_CONCRETE, Material.WHITE_CONCRETE},
             new Material[]{Material.GRAVEL, Material.COBBLESTONE},
             6.0));
         
@@ -170,7 +170,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("sculk", "Sculk",
             new Material[]{Material.SCULK, Material.SCULK_VEIN, Material.SCULK_CATALYST},
             new Material[]{Material.SCULK, Material.DEEPSLATE, Material.SCULK_CATALYST},
-            new Material[]{Material.DEEPSLATE, Material.REINFORCED_DEEPSLATE, Material.SCULK_SHRIEKER},
+            new Material[]{Material.SCULK, Material.SCULK_VEIN, Material.SCULK_CATALYST},
             new Material[]{Material.SCULK_SENSOR, Material.SCULK_CATALYST},
             3.0));
         
@@ -178,7 +178,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("mud", "Çamur",
             new Material[]{Material.MUD, Material.MUDDY_MANGROVE_ROOTS, Material.MUD_BRICKS},
             new Material[]{Material.MUD, Material.CLAY, Material.PACKED_MUD},
-            new Material[]{Material.CLAY, Material.DIRT, Material.STONE},
+            new Material[]{Material.MUD, Material.MUDDY_MANGROVE_ROOTS, Material.MUD_BRICKS},
             new Material[]{Material.MANGROVE_ROOTS, Material.MOSS_CARPET},
             7.0));
 
@@ -186,7 +186,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("rainbow", "Gökkuşağı",
             new Material[]{Material.RED_CONCRETE, Material.ORANGE_CONCRETE, Material.YELLOW_CONCRETE},
             new Material[]{Material.GREEN_CONCRETE, Material.BLUE_CONCRETE, Material.PURPLE_CONCRETE},
-            new Material[]{Material.PINK_CONCRETE, Material.MAGENTA_CONCRETE, Material.LIGHT_BLUE_CONCRETE},
+            new Material[]{Material.RED_CONCRETE, Material.ORANGE_CONCRETE, Material.YELLOW_CONCRETE},
             new Material[]{Material.WHITE_WOOL, Material.GLASS},
             4.0));
 
@@ -194,7 +194,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("netherrack", "Cehennem",
             new Material[]{Material.NETHERRACK, Material.NETHER_BRICKS, Material.RED_NETHER_BRICKS},
             new Material[]{Material.NETHERRACK, Material.NETHER_BRICKS, Material.SOUL_SAND},
-            new Material[]{Material.NETHER_BRICKS, Material.NETHERITE_BLOCK, Material.ANCIENT_DEBRIS},
+            new Material[]{Material.NETHERRACK, Material.NETHER_BRICKS, Material.RED_NETHER_BRICKS},
             new Material[]{Material.FIRE, Material.SOUL_FIRE},
             6.0));
 
@@ -202,7 +202,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("endstone", "End",
             new Material[]{Material.END_STONE, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK},
             new Material[]{Material.END_STONE, Material.PURPUR_BLOCK, Material.END_STONE_BRICKS},
-            new Material[]{Material.END_STONE_BRICKS, Material.OBSIDIAN, Material.CRYING_OBSIDIAN},
+            new Material[]{Material.END_STONE, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK},
             new Material[]{Material.END_ROD, Material.ENDER_CHEST},
             5.0));
 
@@ -258,7 +258,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("calcite", "Kalsit",
             new Material[]{Material.CALCITE, Material.QUARTZ_BLOCK, Material.DRIPSTONE_BLOCK},
             new Material[]{Material.CALCITE, Material.STONE, Material.DEEPSLATE},
-            new Material[]{Material.DEEPSLATE, Material.CALCITE, Material.AMETHYST_BLOCK},
+            new Material[]{Material.CALCITE, Material.QUARTZ_BLOCK, Material.DRIPSTONE_BLOCK},
             new Material[]{Material.AMETHYST_CLUSTER, Material.POINTED_DRIPSTONE},
             5.0));
 
@@ -274,7 +274,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("oxidized", "Oksitlenmiş",
             new Material[]{Material.OXIDIZED_COPPER, Material.WEATHERED_COPPER, Material.EXPOSED_COPPER},
             new Material[]{Material.OXIDIZED_COPPER, Material.COPPER_BLOCK, Material.IRON_BLOCK},
-            new Material[]{Material.IRON_BLOCK, Material.STONE, Material.DEEPSLATE},
+            new Material[]{Material.OXIDIZED_COPPER, Material.WEATHERED_COPPER, Material.EXPOSED_COPPER},
             new Material[]{Material.LIGHTNING_ROD, Material.CHAIN},
             4.0));
 
@@ -282,7 +282,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("cobbled", "Kırık Taş",
             new Material[]{Material.COBBLESTONE, Material.MOSSY_COBBLESTONE, Material.STONE},
             new Material[]{Material.COBBLESTONE, Material.STONE, Material.ANDESITE},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.COBBLESTONE},
+            new Material[]{Material.COBBLESTONE, Material.MOSSY_COBBLESTONE, Material.STONE},
             new Material[]{Material.MOSS_CARPET, Material.VINE},
             8.0));
 
@@ -290,7 +290,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("polished", "Parlatılmış",
             new Material[]{Material.POLISHED_ANDESITE, Material.POLISHED_DIORITE, Material.POLISHED_GRANITE},
             new Material[]{Material.POLISHED_ANDESITE, Material.STONE, Material.ANDESITE},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.POLISHED_ANDESITE},
+            new Material[]{Material.POLISHED_ANDESITE, Material.POLISHED_DIORITE, Material.POLISHED_GRANITE},
             new Material[]{Material.STONE_SLAB, Material.STONE_STAIRS},
             7.0));
 
@@ -298,7 +298,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("bricks", "Tuğla",
             new Material[]{Material.BRICKS, Material.STONE_BRICKS, Material.MOSSY_STONE_BRICKS},
             new Material[]{Material.BRICKS, Material.STONE_BRICKS, Material.COBBLESTONE},
-            new Material[]{Material.STONE_BRICKS, Material.STONE, Material.DEEPSLATE},
+            new Material[]{Material.BRICKS, Material.STONE_BRICKS, Material.MOSSY_STONE_BRICKS},
             new Material[]{Material.BRICK_STAIRS, Material.BRICK_SLAB},
             6.0));
 
@@ -306,7 +306,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("wool", "Yün",
             new Material[]{Material.WHITE_WOOL, Material.LIGHT_GRAY_WOOL, Material.GRAY_WOOL},
             new Material[]{Material.WHITE_WOOL, Material.STONE, Material.DIRT},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.WHITE_WOOL},
+            new Material[]{Material.WHITE_WOOL, Material.LIGHT_GRAY_WOOL, Material.GRAY_WOOL},
             new Material[]{Material.WHITE_CARPET, Material.WHITE_BED},
             3.0));
 
@@ -314,7 +314,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("glass", "Cam",
             new Material[]{Material.GLASS, Material.WHITE_STAINED_GLASS, Material.LIGHT_GRAY_STAINED_GLASS},
             new Material[]{Material.GLASS, Material.STONE, Material.SAND},
-            new Material[]{Material.STONE, Material.DEEPSLATE, Material.GLASS},
+            new Material[]{Material.GLASS, Material.WHITE_STAINED_GLASS, Material.LIGHT_GRAY_STAINED_GLASS},
             new Material[]{Material.GLASS_PANE, Material.IRON_BARS},
             2.0));
 
@@ -322,7 +322,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("packed_mud", "Sıkıştırılmış Çamur",
             new Material[]{Material.PACKED_MUD, Material.MUD_BRICKS, Material.MUD},
             new Material[]{Material.PACKED_MUD, Material.CLAY, Material.DIRT},
-            new Material[]{Material.CLAY, Material.STONE, Material.PACKED_MUD},
+            new Material[]{Material.PACKED_MUD, Material.MUD_BRICKS, Material.MUD},
             new Material[]{Material.MUD_BRICK_SLAB, Material.MUD_BRICK_STAIRS},
             5.0));
 
@@ -330,7 +330,7 @@ public class PaletteRegistry {
         register(new PlanetPalette("reinforced", "Takviyeli",
             new Material[]{Material.REINFORCED_DEEPSLATE, Material.DEEPSLATE, Material.DEEPSLATE_BRICKS},
             new Material[]{Material.REINFORCED_DEEPSLATE, Material.DEEPSLATE, Material.STONE},
-            new Material[]{Material.DEEPSLATE, Material.REINFORCED_DEEPSLATE, Material.NETHERITE_BLOCK},
+            new Material[]{Material.REINFORCED_DEEPSLATE, Material.DEEPSLATE, Material.DEEPSLATE_BRICKS},
             new Material[]{Material.DEEPSLATE_BRICKS, Material.DEEPSLATE_BRICK_SLAB},
             2.0));
     }

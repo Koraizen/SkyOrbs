@@ -127,6 +127,7 @@ public class SkyOrbs extends JavaPlugin {
             // Register event listeners
             planetEventListener = new PlanetEventListener(this);
             getServer().getPluginManager().registerEvents(planetEventListener, this);
+            getServer().getPluginManager().registerEvents(new com.skyorbs.listeners.GUIClickListener(this), this);
             logSuccess("✓ Event listeners registered");
 
             // 5. Commands

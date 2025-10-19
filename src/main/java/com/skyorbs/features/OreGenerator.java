@@ -4,397 +4,352 @@ import com.skyorbs.SkyOrbs;
 import com.skyorbs.core.Orb;
 import com.skyorbs.core.PlanetType;
 import com.skyorbs.biomes.BiomeType;
-import com.skyorbs.utils.NoiseGenerator;
 import org.bukkit.Material;
 
 import java.util.*;
 
 /**
- * FIXED ORE GENERATOR
- * - Integrates with planet generation (part of structure)
- * - Uses PlanetType for ore profiles
- * - Maps BiomeType to PlanetType correctly
- * - No ores in hollow planets
+ * PLANET-TYPE BASED ORE GENERATOR
+ * Her gezegen tipi kendi özel ore profiline sahip!
+ * Derinlik sistemli - Overworld tarzı
  */
 public class OreGenerator {
 
     private static final SkyOrbs plugin = SkyOrbs.getInstance();
 
-    // ========================================
-    // ORE CONFIG CACHE - PERFORMANCE OPTIMIZATION
-    // ========================================
-    private static final Map<String, Map<String, Object>> oreConfigCache = new HashMap<>();
-    private static final Map<String, List<OreEntry>> filteredOreCache = new HashMap<>();
+    // PLANET TYPE -> ORE PROFILES
+    private static final Map<PlanetType, OreProfile> ORE_PROFILES = new HashMap<>();
 
-    // ========================================
-    // STONE VARIANTS - ÇEŞİTLİ TAŞ BLOKLARI
-    // ========================================
-    private static final Material[] STONE_VARIANTS = {
-        Material.STONE,
-        Material.COBBLESTONE,
-        Material.MOSSY_COBBLESTONE,
-        Material.STONE_BRICKS,
-        Material.CRACKED_STONE_BRICKS,
-        Material.MOSSY_STONE_BRICKS,
-        Material.ANDESITE,
-        Material.POLISHED_ANDESITE,
-        Material.DIORITE,
-        Material.POLISHED_DIORITE,
-        Material.GRANITE,
-        Material.POLISHED_GRANITE,
-        Material.SANDSTONE,
-        Material.CUT_SANDSTONE,
-        Material.RED_SANDSTONE,
-        Material.CUT_RED_SANDSTONE,
-        Material.PRISMARINE,
-        Material.PRISMARINE_BRICKS,
-        Material.DARK_PRISMARINE,
-        Material.NETHERRACK,
-        Material.BLACKSTONE,
-        Material.POLISHED_BLACKSTONE,
-        Material.POLISHED_BLACKSTONE_BRICKS,
-        Material.END_STONE,
-        Material.END_STONE_BRICKS,
-        Material.PURPUR_BLOCK,
-        Material.PURPUR_PILLAR,
-        Material.QUARTZ_BLOCK,
-        Material.QUARTZ_BRICKS,
-        Material.QUARTZ_PILLAR,
-        Material.SMOOTH_QUARTZ,
-        Material.BRICKS,
-        Material.NETHER_BRICKS,
-        Material.RED_NETHER_BRICKS,
-        Material.BASALT,
-        Material.POLISHED_BASALT,
-        Material.SMOOTH_BASALT
-    };
-    
-    // ========================================
-    // ORE ENTRY CLASS FOR BATCH PROBABILITY
-    // ========================================
-    private static class OreEntry {
-        final String oreName;
-        final double chance;
-        final double cumulativeChance;
-
-        OreEntry(String oreName, double chance, double cumulativeChance) {
-            this.oreName = oreName;
-            this.chance = chance;
-            this.cumulativeChance = cumulativeChance;
-        }
-    }
-
-    // ========================================
-    // BIOME TO PLANET TYPE MAPPING
-    // ========================================
-    private static final Map<BiomeType, PlanetType> BIOME_TO_PLANET_TYPE = new HashMap<>();
-    
     static {
-        // TERRESTRIAL (Earth-like)
-        BIOME_TO_PLANET_TYPE.put(BiomeType.FOREST, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.PLAINS, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.JUNGLE, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.SAVANNA, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.TAIGA, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.MEADOW, PlanetType.TERRESTRIAL);
-        
-        // DESERT (treated as terrestrial with different ore profile)
-        BIOME_TO_PLANET_TYPE.put(BiomeType.DESERT, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.BADLANDS, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CANYON, PlanetType.TERRESTRIAL);
-        
-        // ICE
-        BIOME_TO_PLANET_TYPE.put(BiomeType.FROZEN_TUNDRA, PlanetType.ICE);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.ICE_SPIKES, PlanetType.ICE);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.GLACIER, PlanetType.ICE);
-        
-        // LAVA
-        BIOME_TO_PLANET_TYPE.put(BiomeType.LAVA_OCEAN, PlanetType.LAVA);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.OBSIDIAN_PLAINS, PlanetType.LAVA);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.MAGMA_CAVES, PlanetType.LAVA);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.BASALTIC, PlanetType.LAVA);
-        
-        // CRYSTAL
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CRYSTAL_FOREST, PlanetType.CRYSTAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CRYSTALLINE, PlanetType.CRYSTAL);
-        
-        // SHADOW/VOID
-        BIOME_TO_PLANET_TYPE.put(BiomeType.VOID, PlanetType.SHADOW);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CHORUS_LAND, PlanetType.SHADOW);
-        
-        // TOXIC
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CORRUPTED, PlanetType.TOXIC);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.TOXIC_SWAMP, PlanetType.TOXIC);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.TOXIC, PlanetType.TOXIC);
-        
-        // GAS (no solid surface, special handling)
-        BIOME_TO_PLANET_TYPE.put(BiomeType.MUSHROOM_GIANT, PlanetType.GAS);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.GLOWSTONE_CAVERN, PlanetType.CRYSTAL);
-        
-        // Additional biomes - map to closest type
-        BIOME_TO_PLANET_TYPE.put(BiomeType.FUNGAL, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CORAL, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.AURORA, PlanetType.ICE);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.STORMY, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.FOGGY, PlanetType.TERRESTRIAL);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.CORROSIVE, PlanetType.TOXIC);
-        BIOME_TO_PLANET_TYPE.put(BiomeType.LUMINOUS, PlanetType.CRYSTAL);
+        initializeOreProfiles();
     }
-    
+
     /**
-     * Get PlanetType from BiomeType
-     */
-    public static PlanetType getPlanetTypeFromBiome(BiomeType biome) {
-        return BIOME_TO_PLANET_TYPE.getOrDefault(biome, PlanetType.TERRESTRIAL);
-    }
-    
-    /**
-     * Try to generate ore at this position during planet generation
-     * OPTIMIZED: Uses cached configs, depth filtering, and batch probability
-     * ENHANCED: Includes stone variants for more variety
-     * REALISTIC: Very low ore spawn rates with noise-based distribution
+     * ANA ORE GENERATION METODu
      */
     public static Material tryGenerateOre(int x, int y, int z, double distanceFromCenter,
                                             int radius, BiomeType biome, Random random) {
 
-        // OPTIMIZATION 1: Early exit for surface blocks
-        if (distanceFromCenter > radius - 2) return null;
+        // YÜZEY VE KABUK KATMANI - ORE YOK (sadece derin iç kısım)
+        if (distanceFromCenter > radius - 8) return null;
 
-        // Get planet type from biome
+        // CONFIG KONTROL
+        if (!plugin.getConfigManager().isOreGenerationEnabled()) return null;
+
+        // Derinlik hesapla (0 = merkez, 1 = yüzey)
+        double depth = distanceFromCenter / radius;
+
+        // Planet Type'ı bul
         PlanetType planetType = getPlanetTypeFromBiome(biome);
-        String configKey = getConfigKeyForPlanetType(planetType, biome);
 
-        // OPTIMIZATION 4: Cache ore configs per planet type
-        Map<String, Object> config = oreConfigCache.computeIfAbsent(configKey, key ->
-            plugin.getConfigManager().getOreConfigForPlanetType(key));
-
-        // Check if ore generation is enabled for this type
-        boolean enabled = (Boolean) config.getOrDefault("enabled", true);
-        if (!enabled) return null;
-
-        double densityMultiplier = ((Number) config.getOrDefault("densityMultiplier", 0.000005)).doubleValue();
-
-        // NOISE-BASED DISTRIBUTION: Use 3D noise for realistic ore veins
-        double veinNoiseScale = ((Number) config.getOrDefault("veinNoiseScale", 0.02)).doubleValue();
-        double veinThreshold = ((Number) config.getOrDefault("veinThreshold", 0.7)).doubleValue();
-
-        // Generate noise value for this position (deterministic based on coordinates)
-        double noiseValue = (NoiseGenerator.simplexNoise3D(x * veinNoiseScale, y * veinNoiseScale, z * veinNoiseScale) + 1) / 2; // Normalize to 0-1
-        if (noiseValue < veinThreshold) return null; // Not in a vein
-
-        // STONE VARIANTS: Chance to return stone variants instead of ores (PLANET TYPE BASED)
-        boolean stoneVariantsEnabled = (Boolean) config.getOrDefault("stoneVariants", true);
-        if (stoneVariantsEnabled && random.nextDouble() < 0.7) { // %70 taş variantı - dengeli dağılım
-            return getStoneVariant(biome, random);
+        // Ore Profile'ı al
+        OreProfile profile = ORE_PROFILES.get(planetType);
+        if (profile == null) {
+            profile = ORE_PROFILES.get(PlanetType.TERRESTRIAL); // Fallback
         }
 
-        @SuppressWarnings("unchecked")
-        var oresConfig = (Map<String, Map<String, Object>>) config.get("ores");
-        if (oresConfig == null || oresConfig.isEmpty()) return null;
+        // Derinlik katmanına göre ore seç
+        return profile.getOreForDepth(depth, random);
+    }
 
-        // CORE RARITY SYSTEM: Ores become rarer and more valuable closer to center
-        double depthRatio = distanceFromCenter / radius; // 0 = center, 1 = surface
-        double coreMultiplier = calculateCoreMultiplier(depthRatio);
+    /**
+     * GEZEGEN TİPİ PROFILLERINI BAŞLAT
+     */
+    private static void initializeOreProfiles() {
 
-        // OPTIMIZATION 2: Depth-based filtering - cache filtered ore lists
-        String cacheKey = configKey + "_" + (int)(depthRatio * 10); // Group by depth ranges
-        List<OreEntry> filteredOres = filteredOreCache.computeIfAbsent(cacheKey, key -> {
-            List<OreEntry> ores = new ArrayList<>();
-            double cumulative = 0.0;
+        // ═══════════════════════════════════════════════
+        // 🌍 TERRESTRIAL (Dünya Benzeri) - Dengeli
+        // ═══════════════════════════════════════════════
+        OreProfile terrestrial = new OreProfile(PlanetType.TERRESTRIAL);
+        // Yüzey (0.7-1.0) - Çok nadir
+        terrestrial.addOre(0.7, 1.0, Material.COAL_ORE, 0.04);
+        terrestrial.addOre(0.7, 1.0, Material.COPPER_ORE, 0.03);
+        terrestrial.addOre(0.7, 1.0, Material.IRON_ORE, 0.02);
+        // Orta (0.4-0.7) - Nadir
+        terrestrial.addOre(0.4, 0.7, Material.IRON_ORE, 0.05);
+        terrestrial.addOre(0.4, 0.7, Material.COAL_ORE, 0.03);
+        terrestrial.addOre(0.4, 0.7, Material.GOLD_ORE, 0.02);
+        terrestrial.addOre(0.4, 0.7, Material.REDSTONE_ORE, 0.015);
+        terrestrial.addOre(0.4, 0.7, Material.LAPIS_ORE, 0.01);
+        // Derin (0.2-0.4) - Çok nadir
+        terrestrial.addOre(0.2, 0.4, Material.IRON_ORE, 0.03);
+        terrestrial.addOre(0.2, 0.4, Material.GOLD_ORE, 0.025);
+        terrestrial.addOre(0.2, 0.4, Material.DIAMOND_ORE, 0.015);
+        terrestrial.addOre(0.2, 0.4, Material.REDSTONE_ORE, 0.02);
+        terrestrial.addOre(0.2, 0.4, Material.EMERALD_ORE, 0.005);
+        // Çok Derin (0.0-0.2) - Merkez - Çok nadir
+        terrestrial.addOre(0.0, 0.2, Material.DIAMOND_ORE, 0.025);
+        terrestrial.addOre(0.0, 0.2, Material.EMERALD_ORE, 0.01);
+        terrestrial.addOre(0.0, 0.2, Material.GOLD_ORE, 0.02);
+        terrestrial.addOre(0.0, 0.2, Material.DEEPSLATE_DIAMOND_ORE, 0.015);
+        ORE_PROFILES.put(PlanetType.TERRESTRIAL, terrestrial);
 
-            for (var entry : oresConfig.entrySet()) {
-                String oreName = entry.getKey();
-                var oreData = entry.getValue();
+        // ═══════════════════════════════════════════════
+        // 🔥 LAVA (Volkanik) - Gold & Ancient Debris
+        // ═══════════════════════════════════════════════
+        OreProfile lava = new OreProfile(PlanetType.LAVA);
+        // Yüzey - Çok nadir
+        lava.addOre(0.7, 1.0, Material.NETHERRACK, 0.06);
+        lava.addOre(0.7, 1.0, Material.NETHER_GOLD_ORE, 0.04);
+        lava.addOre(0.7, 1.0, Material.BLACKSTONE, 0.03);
+        // Orta - Nadir
+        lava.addOre(0.4, 0.7, Material.NETHER_GOLD_ORE, 0.06);
+        lava.addOre(0.4, 0.7, Material.NETHER_QUARTZ_ORE, 0.05);
+        lava.addOre(0.4, 0.7, Material.MAGMA_BLOCK, 0.03);
+        lava.addOre(0.4, 0.7, Material.GOLD_ORE, 0.04);
+        // Derin - Çok nadir
+        lava.addOre(0.2, 0.4, Material.GOLD_ORE, 0.05);
+        lava.addOre(0.2, 0.4, Material.NETHER_QUARTZ_ORE, 0.04);
+        lava.addOre(0.2, 0.4, Material.ANCIENT_DEBRIS, 0.01); // Çok nadir!
+        lava.addOre(0.2, 0.4, Material.OBSIDIAN, 0.025);
+        // Çok Derin - ANCIENT DEBRIS PARADISE! - Çok nadir
+        lava.addOre(0.0, 0.2, Material.ANCIENT_DEBRIS, 0.02); // Daha nadir!
+        lava.addOre(0.0, 0.2, Material.OBSIDIAN, 0.03);
+        ORE_PROFILES.put(PlanetType.LAVA, lava);
 
-                boolean oreEnabled = (Boolean) oreData.getOrDefault("enabled", true);
-                if (!oreEnabled) continue;
+        // ═══════════════════════════════════════════════
+        // ❄️ ICE (Buzul) - Diamond & Lapis Paradise
+        // ═══════════════════════════════════════════════
+        OreProfile ice = new OreProfile(PlanetType.ICE);
+        // Yüzey - Çok nadir
+        ice.addOre(0.7, 1.0, Material.PACKED_ICE, 0.06);
+        ice.addOre(0.7, 1.0, Material.IRON_ORE, 0.03);
+        ice.addOre(0.7, 1.0, Material.COAL_ORE, 0.02);
+        // Orta - Nadir
+        ice.addOre(0.4, 0.7, Material.IRON_ORE, 0.05);
+        ice.addOre(0.4, 0.7, Material.LAPIS_ORE, 0.04); // Lapis nadir
+        ice.addOre(0.4, 0.7, Material.BLUE_ICE, 0.03);
+        ice.addOre(0.4, 0.7, Material.DIAMOND_ORE, 0.02);
+        // Derin - Çok nadir
+        ice.addOre(0.2, 0.4, Material.DIAMOND_ORE, 0.04); // Diamond nadir
+        ice.addOre(0.2, 0.4, Material.LAPIS_ORE, 0.05);
+        ice.addOre(0.2, 0.4, Material.EMERALD_ORE, 0.015);
+        ice.addOre(0.2, 0.4, Material.PACKED_ICE, 0.03);
+        // Çok Derin - Çok nadir
+        ice.addOre(0.0, 0.2, Material.DIAMOND_ORE, 0.06); // DIAMOND nadir!
+        ice.addOre(0.0, 0.2, Material.DEEPSLATE_DIAMOND_ORE, 0.03);
+        ice.addOre(0.0, 0.2, Material.BLUE_ICE, 0.02);
+        ORE_PROFILES.put(PlanetType.ICE, ice);
 
-                // OPTIMIZATION 2: Skip ores that don't spawn at this depth
-                if (!canOreSpawnAtDepth(oreName, depthRatio)) continue;
+        // ═══════════════════════════════════════════════
+        // 💎 CRYSTAL (Kristal) - Gem Paradise
+        // ═══════════════════════════════════════════════
+        OreProfile crystal = new OreProfile(PlanetType.CRYSTAL);
+        // Yüzey - Çok nadir
+        crystal.addOre(0.7, 1.0, Material.QUARTZ_BLOCK, 0.05);
+        crystal.addOre(0.7, 1.0, Material.AMETHYST_BLOCK, 0.03);
+        crystal.addOre(0.7, 1.0, Material.CALCITE, 0.02);
+        // Orta - Nadir
+        crystal.addOre(0.4, 0.7, Material.AMETHYST_BLOCK, 0.06);
+        crystal.addOre(0.4, 0.7, Material.DIAMOND_ORE, 0.03);
+        crystal.addOre(0.4, 0.7, Material.EMERALD_ORE, 0.025);
+        crystal.addOre(0.4, 0.7, Material.LAPIS_ORE, 0.04);
+        // Derin - Çok nadir
+        crystal.addOre(0.2, 0.4, Material.DIAMOND_ORE, 0.05);
+        crystal.addOre(0.2, 0.4, Material.EMERALD_ORE, 0.04);
+        crystal.addOre(0.2, 0.4, Material.AMETHYST_CLUSTER, 0.03);
+        crystal.addOre(0.2, 0.4, Material.LAPIS_BLOCK, 0.015);
+        // Çok Derin - GEM nadir!
+        crystal.addOre(0.0, 0.2, Material.AMETHYST_BLOCK, 0.04);
+        crystal.addOre(0.0, 0.2, Material.BUDDING_AMETHYST, 0.015);
+        ORE_PROFILES.put(PlanetType.CRYSTAL, crystal);
 
-                double baseChance = ((Number) oreData.getOrDefault("chance", 0.0)).doubleValue();
-                double chance = baseChance * densityMultiplier * coreMultiplier;
+        // ═══════════════════════════════════════════════
+        // 🌑 SHADOW (Gölge) - Obsidian & Dark Materials
+        // ═══════════════════════════════════════════════
+        OreProfile shadow = new OreProfile(PlanetType.SHADOW);
+        // Yüzey - Çok nadir
+        shadow.addOre(0.7, 1.0, Material.END_STONE, 0.05);
+        shadow.addOre(0.7, 1.0, Material.OBSIDIAN, 0.03);
+        shadow.addOre(0.7, 1.0, Material.COAL_ORE, 0.02);
+        // Orta - Nadir
+        shadow.addOre(0.4, 0.7, Material.OBSIDIAN, 0.05);
+        shadow.addOre(0.4, 0.7, Material.CRYING_OBSIDIAN, 0.025);
+        shadow.addOre(0.4, 0.7, Material.DIAMOND_ORE, 0.02);
+        shadow.addOre(0.4, 0.7, Material.END_STONE, 0.03);
+        // Derin - Çok nadir
+        shadow.addOre(0.2, 0.4, Material.CRYING_OBSIDIAN, 0.04);
+        shadow.addOre(0.2, 0.4, Material.DIAMOND_ORE, 0.025);
+        shadow.addOre(0.2, 0.4, Material.ANCIENT_DEBRIS, 0.01);
+        shadow.addOre(0.2, 0.4, Material.PURPUR_BLOCK, 0.025);
+        // Çok Derin - Çok nadir
+        shadow.addOre(0.0, 0.2, Material.OBSIDIAN, 0.06);
+        shadow.addOre(0.0, 0.2, Material.CRYING_OBSIDIAN, 0.03);
+        shadow.addOre(0.0, 0.2, Material.RESPAWN_ANCHOR, 0.005); // Çok nadir!
+        ORE_PROFILES.put(PlanetType.SHADOW, shadow);
 
-                // Rare ores more common in core
-                if (isRareOre(oreName) && depthRatio < 0.2) {
-                    chance *= 2.0;
-                }
+        // ═══════════════════════════════════════════════
+        // ☠️ TOXIC (Zehirli) - Redstone & Slime
+        // ═══════════════════════════════════════════════
+        OreProfile toxic = new OreProfile(PlanetType.TOXIC);
+        // Yüzey - Çok nadir
+        toxic.addOre(0.7, 1.0, Material.SLIME_BLOCK, 0.04);
+        toxic.addOre(0.7, 1.0, Material.MOSS_BLOCK, 0.03);
+        toxic.addOre(0.7, 1.0, Material.COPPER_ORE, 0.02);
+        // Orta - Nadir
+        toxic.addOre(0.4, 0.7, Material.REDSTONE_ORE, 0.06); // Redstone nadir
+        toxic.addOre(0.4, 0.7, Material.SLIME_BLOCK, 0.05);
+        toxic.addOre(0.4, 0.7, Material.COPPER_ORE, 0.04);
+        toxic.addOre(0.4, 0.7, Material.IRON_ORE, 0.03);
+        // Derin - Çok nadir
+        toxic.addOre(0.2, 0.4, Material.REDSTONE_ORE, 0.06); // Redstone nadir
+        toxic.addOre(0.2, 0.4, Material.GOLD_ORE, 0.025);
+        toxic.addOre(0.2, 0.4, Material.DIAMOND_ORE, 0.015);
+        toxic.addOre(0.2, 0.4, Material.SCULK, 0.02);
+        // Çok Derin - Çok nadir
+        toxic.addOre(0.0, 0.2, Material.REDSTONE_ORE, 0.05);
+        toxic.addOre(0.0, 0.2, Material.SCULK_CATALYST, 0.01);
+        toxic.addOre(0.0, 0.2, Material.DIAMOND_ORE, 0.02);
+        ORE_PROFILES.put(PlanetType.TOXIC, toxic);
 
-                if (chance > 0) {
-                    cumulative += chance;
-                    ores.add(new OreEntry(oreName, chance, cumulative));
+        // ═══════════════════════════════════════════════
+        // 🌫️ GAS (Gaz Devi) - Minimal Ores
+        // ═══════════════════════════════════════════════
+        OreProfile gas = new OreProfile(PlanetType.GAS);
+        // Çok az ore - gaz gezegeni - Çok nadir
+        gas.addOre(0.7, 1.0, Material.IRON_ORE, 0.01);
+        gas.addOre(0.4, 0.7, Material.GOLD_ORE, 0.012);
+        gas.addOre(0.2, 0.4, Material.DIAMOND_ORE, 0.006);
+        gas.addOre(0.0, 0.2, Material.NETHERITE_SCRAP, 0.003);
+        ORE_PROFILES.put(PlanetType.GAS, gas);
+    }
+
+    /**
+     * BiomeType -> PlanetType mapping
+     */
+    public static PlanetType getPlanetTypeFromBiome(BiomeType biome) {
+        return switch (biome) {
+            // TERRESTRIAL
+            case FOREST, PLAINS, JUNGLE, SAVANNA, TAIGA, MEADOW,
+                 DESERT, BADLANDS, CANYON, PRIMAL, EARTH -> PlanetType.TERRESTRIAL;
+
+            // LAVA
+            case LAVA_OCEAN, OBSIDIAN_PLAINS, MAGMA_CAVES, BASALTIC,
+                 FLAME, INFERNAL, STAR_FORGED -> PlanetType.LAVA;
+
+            // ICE
+            case FROZEN_TUNDRA, ICE_SPIKES, GLACIER, AURORA, FROST, MIRROR -> PlanetType.ICE;
+
+            // CRYSTAL
+            case CRYSTAL_FOREST, CRYSTALLINE, LUMINOUS, GLOWSTONE_CAVERN,
+                 CELESTIAL, DIVINE, QUANTUM, POLISHED, GLASS, CALCITE -> PlanetType.CRYSTAL;
+
+            // SHADOW
+            case VOID, CHORUS_LAND, CORRUPTED, VOID_BORN,
+                 NEBULOUS, COSMIC, ETHEREAL, DIMENSIONAL, PHASE,
+                 ARCANE, VOID_ENERGY, TEMPORAL -> PlanetType.SHADOW;
+
+            // TOXIC
+            case TOXIC_SWAMP, TOXIC, CORROSIVE, SPONGE -> PlanetType.TOXIC;
+
+            // GAS
+            case MUSHROOM_GIANT, FUNGAL, WIND, GALACTIC, NEBULA_INFUSED,
+                 UNIVERSE_BOUND, STORMY, FOGGY -> PlanetType.GAS;
+
+            default -> PlanetType.TERRESTRIAL;
+        };
+    }
+
+    /**
+     * TAŞ VARİANTLARI (çeşitlilik)
+     */
+    public static Material getStoneVariant(BiomeType biome, Random random) {
+        if (random.nextDouble() > 0.12) return null; // %88 normal blok
+
+        PlanetType planetType = getPlanetTypeFromBiome(biome);
+
+        return switch (planetType) {
+            case LAVA -> {
+                Material[] variants = {Material.BLACKSTONE, Material.BASALT, Material.NETHERRACK, Material.MAGMA_BLOCK};
+                yield variants[random.nextInt(variants.length)];
+            }
+            case CRYSTAL -> {
+                Material[] variants = {Material.QUARTZ_BLOCK, Material.CALCITE, Material.DRIPSTONE_BLOCK, Material.AMETHYST_BLOCK};
+                yield variants[random.nextInt(variants.length)];
+            }
+            case SHADOW -> {
+                Material[] variants = {Material.END_STONE, Material.OBSIDIAN, Material.PURPUR_BLOCK, Material.BLACKSTONE};
+                yield variants[random.nextInt(variants.length)];
+            }
+            case ICE -> {
+                Material[] variants = {Material.STONE, Material.ANDESITE, Material.DIORITE, Material.PACKED_ICE};
+                yield variants[random.nextInt(variants.length)];
+            }
+            case TOXIC -> {
+                Material[] variants = {Material.MOSS_BLOCK, Material.SCULK, Material.SLIME_BLOCK, Material.PRISMARINE};
+                yield variants[random.nextInt(variants.length)];
+            }
+            default -> {
+                Material[] variants = {Material.STONE, Material.ANDESITE, Material.DIORITE, Material.GRANITE};
+                yield variants[random.nextInt(variants.length)];
+            }
+        };
+    }
+
+    /**
+     * ORE PROFILE CLASS
+     */
+    private static class OreProfile {
+        private final PlanetType planetType;
+        private final List<OreLayer> layers = new ArrayList<>();
+
+        public OreProfile(PlanetType planetType) {
+            this.planetType = planetType;
+        }
+
+        public void addOre(double minDepth, double maxDepth, Material ore, double chance) {
+            layers.add(new OreLayer(minDepth, maxDepth, ore, chance));
+        }
+
+        public Material getOreForDepth(double depth, Random random) {
+            // Check layers in order for structured generation like Overworld
+            // Ensure ores spawn in separate veins/clusters by type - no mixing
+            List<OreLayer> availableLayers = new ArrayList<>();
+            for (OreLayer layer : layers) {
+                if (depth >= layer.minDepth && depth <= layer.maxDepth) {
+                    availableLayers.add(layer);
                 }
             }
-            return ores;
-        });
 
-        if (filteredOres.isEmpty()) return null;
-
-        // OPTIMIZATION 3: Batch probability - single roll for ore category
-        double totalChance = filteredOres.get(filteredOres.size() - 1).cumulativeChance;
-        double roll = random.nextDouble() * totalChance;
-
-        // Binary search for the selected ore
-        int low = 0, high = filteredOres.size() - 1;
-        while (low <= high) {
-            int mid = (low + high) / 2;
-            if (roll <= filteredOres.get(mid).cumulativeChance) {
-                if (mid == 0 || roll > filteredOres.get(mid - 1).cumulativeChance) {
-                    return getOreMaterial(filteredOres.get(mid).oreName, y, radius);
+            // If multiple ores available in this depth, pick one randomly but ensure separation
+            if (!availableLayers.isEmpty()) {
+                OreLayer selectedLayer = availableLayers.get(random.nextInt(availableLayers.size()));
+                if (random.nextDouble() < selectedLayer.chance) {
+                    // Additional check: ensure ores are not too close to each other
+                    // This creates orderly distribution - reduced to 50% for much rarer spawning
+                    if (random.nextDouble() < 0.5) { // 50% chance to place, creating natural spacing
+                        return selectedLayer.ore;
+                    }
                 }
-                high = mid - 1;
-            } else {
-                low = mid + 1;
             }
-        }
-
-        return null;
-    }
-    
-    /**
-     * Calculate core multiplier based on depth - OVERWORLD STYLE
-     * Similar to Minecraft's natural ore distribution
-     */
-    private static double calculateCoreMultiplier(double depthRatio) {
-        if (depthRatio < 0.1) {
-            // Very deep core - rare ores
-            return 0.5; // Low chance
-        } else if (depthRatio < 0.3) {
-            // Deep areas - valuable ores
-            return 0.8; // Moderate chance
-        } else if (depthRatio < 0.6) {
-            // Mid-depth - balanced
-            return 1.2; // Good chance
-        } else {
-            // Near surface - common ores
-            return 1.5; // High chance
+            return null;
         }
     }
-    
+
     /**
-     * Get config key for planet type - PLANET TYPE BASED: Use planet type with biome variations
+     * ORE LAYER CLASS
      */
-    private static String getConfigKeyForPlanetType(PlanetType planetType, BiomeType biome) {
-        // Special handling for specific biomes with unique ore profiles
-        if (biome == BiomeType.CRYSTAL_FOREST || biome == BiomeType.CRYSTALLINE) {
-            return biome.name().toLowerCase();
+    private static class OreLayer {
+        final double minDepth;
+        final double maxDepth;
+        final Material ore;
+        final double chance;
+
+        public OreLayer(double minDepth, double maxDepth, Material ore, double chance) {
+            this.minDepth = minDepth;
+            this.maxDepth = maxDepth;
+            this.ore = ore;
+            this.chance = chance;
         }
-
-        if (biome == BiomeType.LAVA_OCEAN || biome == BiomeType.MAGMA_CAVES) {
-            return biome.name().toLowerCase();
-        }
-
-        if (biome == BiomeType.FROZEN_TUNDRA || biome == BiomeType.GLACIER) {
-            return biome.name().toLowerCase();
-        }
-
-        // Fallback to planet type
-        return planetType.name().toLowerCase();
-    }
-    
-    /**
-     * Check if ore is rare/valuable
-     */
-    private static boolean isRareOre(String oreName) {
-        return switch (oreName.toUpperCase()) {
-            case "DIAMOND", "EMERALD", "ANCIENT_DEBRIS", "NETHERITE", "AMETHYST" -> true;
-            default -> false;
-        };
     }
 
     /**
-     * OVERWORLD STYLE DEPTH DISTRIBUTION: Similar to Minecraft's ore levels
-     */
-    private static boolean canOreSpawnAtDepth(String oreName, double depthRatio) {
-        return switch (oreName.toUpperCase()) {
-            // Surface ores (near surface - most common)
-            case "COAL", "IRON", "COPPER" -> depthRatio > 0.3; // Near surface
-            // Mid-depth ores (balanced)
-            case "GOLD", "REDSTONE", "LAPIS" -> depthRatio > 0.1 && depthRatio < 0.7;
-            // Deep ores (rare and valuable)
-            case "DIAMOND", "EMERALD" -> depthRatio < 0.5; // Deeper areas
-            // Very deep/core ores (extremely rare)
-            case "ANCIENT_DEBRIS", "NETHERITE" -> depthRatio < 0.3; // Very deep
-            // Nether ores (special biomes only)
-            case "NETHER_QUARTZ", "NETHER_GOLD" -> true; // Always available in nether biomes
-            // Special ores (biome-specific)
-            case "GLOWSTONE", "OBSIDIAN", "SLIME", "PRISMARINE", "NETHERRACK", "AMETHYST" -> true;
-            default -> true;
-        };
-    }
-
-    /**
-     * Get a stone variant based on biome type - PLANET TYPE BASED
-     */
-    private static Material getStoneVariant(BiomeType biome, Random random) {
-        // Planet type based stone variants - aesthetic and thematic
-        Material[] biomeStones = switch (biome) {
-            case LAVA_OCEAN, MAGMA_CAVES, BASALTIC -> new Material[]{
-                Material.NETHERRACK, Material.BLACKSTONE, Material.BASALT, Material.POLISHED_BASALT,
-                Material.MAGMA_BLOCK, Material.NETHER_BRICKS, Material.RED_NETHER_BRICKS
-            };
-            case CRYSTAL_FOREST, CRYSTALLINE -> new Material[]{
-                Material.QUARTZ_BLOCK, Material.QUARTZ_BRICKS, Material.QUARTZ_PILLAR,
-                Material.PURPUR_BLOCK, Material.PURPUR_PILLAR, Material.END_STONE, Material.END_STONE_BRICKS
-            };
-            case VOID, CHORUS_LAND -> new Material[]{
-                Material.END_STONE, Material.END_STONE_BRICKS, Material.PURPUR_BLOCK,
-                Material.OBSIDIAN, Material.CRYING_OBSIDIAN
-            };
-            case DESERT, BADLANDS, CANYON -> new Material[]{
-                Material.SANDSTONE, Material.CUT_SANDSTONE, Material.RED_SANDSTONE,
-                Material.CUT_RED_SANDSTONE, Material.STONE, Material.COBBLESTONE
-            };
-            case FROZEN_TUNDRA, GLACIER, ICE_SPIKES -> new Material[]{
-                Material.STONE, Material.COBBLESTONE, Material.ANDESITE, Material.POLISHED_ANDESITE,
-                Material.DIORITE, Material.POLISHED_DIORITE, Material.GRANITE, Material.POLISHED_GRANITE
-            };
-            case TOXIC_SWAMP, TOXIC, CORRUPTED -> new Material[]{
-                Material.GREEN_CONCRETE, Material.LIME_CONCRETE, Material.PRISMARINE,
-                Material.PRISMARINE_BRICKS, Material.DARK_PRISMARINE, Material.SLIME_BLOCK
-            };
-            default -> STONE_VARIANTS; // All variants for other biomes
-        };
-
-        return biomeStones[random.nextInt(biomeStones.length)];
-    }
-    
-    /**
-     * Get ore material (with deepslate variants based on depth)
-     */
-    private static Material getOreMaterial(String oreName, int y, int planetRadius) {
-        // Use deepslate variant if below center
-        boolean useDeepslate = y < 0 && plugin.getConfigManager().isDeepslateEnabled();
-        
-        return switch (oreName.toUpperCase()) {
-            case "COAL" -> useDeepslate ? Material.DEEPSLATE_COAL_ORE : Material.COAL_ORE;
-            case "IRON" -> useDeepslate ? Material.DEEPSLATE_IRON_ORE : Material.IRON_ORE;
-            case "COPPER" -> useDeepslate ? Material.DEEPSLATE_COPPER_ORE : Material.COPPER_ORE;
-            case "GOLD" -> useDeepslate ? Material.DEEPSLATE_GOLD_ORE : Material.GOLD_ORE;
-            case "REDSTONE" -> useDeepslate ? Material.DEEPSLATE_REDSTONE_ORE : Material.REDSTONE_ORE;
-            case "LAPIS" -> useDeepslate ? Material.DEEPSLATE_LAPIS_ORE : Material.LAPIS_ORE;
-            case "DIAMOND" -> useDeepslate ? Material.DEEPSLATE_DIAMOND_ORE : Material.DIAMOND_ORE;
-            case "EMERALD" -> useDeepslate ? Material.DEEPSLATE_EMERALD_ORE : Material.EMERALD_ORE;
-            case "ANCIENT_DEBRIS" -> Material.ANCIENT_DEBRIS;
-            case "NETHER_QUARTZ" -> Material.NETHER_QUARTZ_ORE;
-            case "NETHER_GOLD" -> Material.NETHER_GOLD_ORE;
-            case "GLOWSTONE" -> Material.GLOWSTONE;
-            case "OBSIDIAN" -> Material.OBSIDIAN;
-            case "SLIME" -> Material.SLIME_BLOCK;
-            case "AMETHYST" -> Material.AMETHYST_BLOCK;
-            case "PRISMARINE" -> Material.PRISMARINE_CRYSTALS;
-            case "NETHERRACK" -> Material.NETHERRACK;
-            default -> null;
-        };
-    }
-    
-    /**
-     * Data class for block placement
+     * Block data helper class
      */
     public static class BlockData {
         public final int x, y, z;
         public final Material material;
-        
+
         public BlockData(int x, int y, int z, Material material) {
             this.x = x;
             this.y = y;

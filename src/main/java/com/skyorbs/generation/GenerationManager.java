@@ -135,22 +135,19 @@ public class GenerationManager {
                 final String[] actionBarRef = {""};
                 final long[] lastUpdateTime = {0};
 
-                if ("bossbar".equals(progressType) && plugin.getConfig().getBoolean("progressDisplay.bossbar.enabled", true)) {
+                if ("bossbar".equals(progressType)) { // Config kontrolünü kaldır, direkt oluştur
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        String colorStr = plugin.getConfig().getString("progressDisplay.bossbar.color", "YELLOW");
-                        String styleStr = plugin.getConfig().getString("progressDisplay.bossbar.style", "SEGMENTED_20");
+                        try {
+                            BarColor color = BarColor.YELLOW;
+                            BarStyle style = BarStyle.SEGMENTED_20;
 
-                        BarColor color = BarColor.valueOf(colorStr.toUpperCase());
-                        BarStyle style = BarStyle.valueOf(styleStr.toUpperCase());
-
-                        String titleFormat = plugin.getConfig().getString("progressDisplay.bossbar.titleFormat", "§6🌍 Gezegen Oluşturuluyor... §f0%");
-                        String initialTitle = titleFormat.replace("{percent}", "0").replace("{step}", "Başlatılıyor...");
-
-                        BossBar bossBar = Bukkit.createBossBar(initialTitle, color, style);
-                        bossBar.addPlayer(player);
-                        bossBar.setVisible(true);
-                        bossBarRef[0] = bossBar;
-                        plugin.logInfo("BossBar created for player: " + player.getName());
+                            BossBar bossBar = Bukkit.createBossBar("§6🌍 Gezegen Oluşturuluyor...", color, style);
+                            bossBar.addPlayer(player);
+                            bossBar.setVisible(true);
+                            bossBarRef[0] = bossBar;
+                        } catch (Exception e) {
+                            plugin.logError("BossBar oluşturulamadı!", e);
+                        }
                     });
                 }
 
@@ -230,37 +227,13 @@ public class GenerationManager {
                      }); // Immediate teleport when shell starts
                  }, firstBlockRef, player);
 
-                // ORE GENERATION - Artık gezegen yapısının bir parçası olarak yukarıda yapıldı!
-                // Eski ayrı ore generation'ı kaldırıldı çünkü artık gezegen blokları ile entegre
+                // INTEGRATED FEATURES - Artık gezegen yapısının bir parçası olarak yukarıda yapıldı!
+                // Ağaçlar, yapılar ve madenler gezegen oluşumu sırasında entegre edildi
                 progress[0]++;
                 sendProgress.run();
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    player.sendMessage("§eMadenciler çalışıyor... ✓ (Gezegen yapısına entegre)");
+                    player.sendMessage("§eÖzellikler entegre edildi... ✓ (Gezegen yapısına dahil)");
                 });
-
-                // AĞAÇ GENERATION
-                progress[0]++;
-                sendProgress.run();
-                player.sendMessage("§eAğaçlar büyüyor...");
-
-                List<OreGenerator.BlockData> trees = TreeGenerator.generateTrees(orb, biome, world);
-                List<BlockPlacement> treeBlocks = new ArrayList<>();
-                for (OreGenerator.BlockData tree : trees) {
-                    treeBlocks.add(new BlockPlacement(tree.x, tree.y, tree.z, tree.material));
-                }
-                placeBlocksInBatches(world, treeBlocks, null);
-
-                // YAPI GENERATION
-                progress[0]++;
-                sendProgress.run();
-                player.sendMessage("§eYapılar inşa ediliyor...");
-
-                List<OreGenerator.BlockData> structures = StructureGenerator.generateStructures(orb, biome, world);
-                List<BlockPlacement> structureBlocks = new ArrayList<>();
-                for (OreGenerator.BlockData structure : structures) {
-                    structureBlocks.add(new BlockPlacement(structure.x, structure.y, structure.z, structure.material));
-                }
-                placeBlocksInBatches(world, structureBlocks, null);
 
                 // HAZİNE GENERATION
                 progress[0]++;
@@ -460,10 +433,10 @@ public class GenerationManager {
     }
 
     /**
-     * SOLID PLANET - Tam dolu klasik gezegen (WITH INTEGRATED ORE GENERATION) - PERFORMANCE OPTIMIZED
+     * SOLID PLANET - Tam dolu klasik gezegen (WITH INTEGRATED ORE, TREE, AND STRUCTURE GENERATION) - PERFORMANCE OPTIMIZED
      */
     private PlanetGenerationResult generateSolidPlanet(int cx, int cy, int cz,
-                                      int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
+                                       int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
 
         com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
         List<BlockPlacement> blocks = new ArrayList<>();
@@ -477,6 +450,10 @@ public class GenerationManager {
         // Optimize edilmiş loop - daha az sqrt hesaplaması
         double radiusSquared = radius * radius;
         double coreRadiusSquared = (radius * 0.15) * (radius * 0.15);
+
+        // INTEGRATED TREE AND STRUCTURE GENERATION - Generate within planet volume
+        List<OreGenerator.BlockData> integratedTrees = generateTreesWithinPlanet(cx, cy, cz, radius, seed, biome, random);
+        List<OreGenerator.BlockData> integratedStructures = generateStructuresWithinPlanet(cx, cy, cz, radius, seed, biome, random);
 
         for (int y = radius; y >= -radius; y--) {
             double ySquared = y * y;
@@ -501,12 +478,32 @@ public class GenerationManager {
 
                             Material material = palette.getMaterialByDepthAndNoise(depth, noiseValue, random);
 
-                            // CRITICAL FIX: Integrate ores during planet generation
-                            Material oreMaterial = OreGenerator.tryGenerateOre(
-                                cx + x, cy + y, cz + z, distance, radius, biome, random
-                            );
-                            if (oreMaterial != null) {
-                                material = oreMaterial;
+                            // CHECK FOR INTEGRATED TREES AND STRUCTURES FIRST
+                            Material integratedMaterial = getIntegratedFeatureMaterial(cx + x, cy + y, cz + z, integratedTrees, integratedStructures);
+                            if (integratedMaterial != null) {
+                                material = integratedMaterial;
+                            } else {
+                                // ORE GENERATION - OVERWORLD STYLE
+                                Material oreMaterial = OreGenerator.tryGenerateOre(
+                                    cx + x, cy + y, cz + z,
+                                    distance,  // distanceFromCenter
+                                    radius,    // planet radius
+                                    biome,     // biome type
+                                    random     // random
+                                );
+
+                                if (oreMaterial != null) {
+                                    material = oreMaterial;
+                                }
+
+                                // TAŞ VARİANTLARI (çeşitlilik için)
+                                Material originalMaterial = palette.getMaterialByDepthAndNoise(depth, noiseValue, random);
+                                if (material == originalMaterial) {
+                                    Material stoneVariant = OreGenerator.getStoneVariant(biome, random);
+                                    if (stoneVariant != null) {
+                                        material = stoneVariant;
+                                    }
+                                }
                             }
 
                             BlockPlacement block = new BlockPlacement(cx + x, cy + y, cz + z, material);
@@ -1509,6 +1506,304 @@ public class GenerationManager {
                 orb.setRadius(20 + random.nextInt(10));
             }
         }
+    }
+
+    /**
+     * Generate trees within planet volume - integrated into planet generation
+     */
+    private List<OreGenerator.BlockData> generateTreesWithinPlanet(int cx, int cy, int cz, int radius, long seed, BiomeType biome, Random random) {
+        List<OreGenerator.BlockData> blocks = new ArrayList<>();
+        Random treeRandom = new Random(seed + 456);
+
+        int cx_planet = cx;
+        int cy_planet = cy;
+        int cz_planet = cz;
+        int radius_planet = radius;
+
+        // Get tree config
+        TreeGenerator.TreeConfig config = getTreeConfigForIntegration(biome);
+        if (config == null) return blocks;
+
+        double treeMultiplier = 2.0;
+        int treeCount = (int)(radius * config.density * treeMultiplier);
+
+        for (int i = 0; i < treeCount; i++) {
+            int x = cx + treeRandom.nextInt(radius * 2) - radius;
+            int z = cz + treeRandom.nextInt(radius * 2) - radius;
+
+            // Find ground level within planet
+            int y = findGroundLevelWithinPlanet(cx, cy, cz, x, z, radius, treeRandom);
+
+            if (y == -1) continue;
+
+            TreeGenerator.TreeType type = config.getRandomType(treeRandom);
+            generateTreeWithinPlanet(blocks, x, y + 1, z, type, treeRandom, cx, cy, cz, radius);
+        }
+
+        return blocks;
+    }
+
+    /**
+     * Generate structures within planet volume - integrated into planet generation
+     */
+    private List<OreGenerator.BlockData> generateStructuresWithinPlanet(int cx, int cy, int cz, int radius, long seed, BiomeType biome, Random random) {
+        List<OreGenerator.BlockData> blocks = new ArrayList<>();
+
+        // CONFIG KONTROLLÜ - Build sistemi aktif mi?
+        if (!plugin.getConfig().getBoolean("buildings.enabled", true)) {
+            return blocks;
+        }
+
+        Random structRandom = new Random(seed + biome.name().hashCode());
+
+        int cx_planet = cx;
+        int cy_planet = cy;
+        int cz_planet = cz;
+        int radius_planet = radius;
+
+        // Get planet type from biome (simplified for integration)
+        com.skyorbs.core.PlanetType planetType = com.skyorbs.core.PlanetType.TERRESTRIAL; // Default for now
+
+        // CONFIG'DEN PLANET TYPE AYARLARINI OKU
+        String planetTypeKey = planetType.name().toLowerCase();
+        boolean planetEnabled = plugin.getConfig()
+            .getBoolean("buildings.planetTypes." + planetTypeKey + ".enabled", true);
+
+        if (!planetEnabled) return blocks;
+
+        double baseDensity = plugin.getConfig()
+            .getDouble("buildings.densityMultiplier", 0.02);
+        double planetMultiplier = plugin.getConfig()
+            .getDouble("buildings.planetTypes." + planetTypeKey + ".densityMultiplier", 1.0);
+
+        int structureCount = (int)(radius * baseDensity * planetMultiplier);
+
+        for (int i = 0; i < structureCount; i++) {
+            // Generate positions within planet bounds
+            int x = cx + structRandom.nextInt(radius * 2) - radius;
+            int z = cz + structRandom.nextInt(radius * 2) - radius;
+            int y = cy + radius; // Surface level
+
+            // CONFIG'DEN YAPILARI SEÇ - Gezegen türüne göre
+            StructureGenerator.BuildingType type = getBuildingTypeFromConfigForIntegration(planetType, structRandom);
+
+            // Generate the structure within planet
+            generateBuildingWithinPlanet(blocks, x, y, z, type, structRandom, biome, planetType, cx, cy, cz, radius);
+        }
+
+        return blocks;
+    }
+
+    /**
+     * Find ground level within planet volume
+     */
+    private int findGroundLevelWithinPlanet(int cx, int cy, int cz, int x, int z, int radius, Random random) {
+        // Start from top of planet and raycast downward
+        int searchStartY = cy + radius + 5;
+        int searchEndY = cy - radius;
+
+        for (int y = searchStartY; y >= searchEndY; y--) {
+            // Check if within planet bounds
+            double distanceFromCenter = Math.sqrt(
+                (x - cx) * (x - cx) +
+                (y - cy) * (y - cy) +
+                (z - cz) * (z - cz)
+            );
+
+            // Must be on or near surface (within 3 blocks of radius)
+            if (distanceFromCenter >= radius - 3 && distanceFromCenter <= radius + 1) {
+                return y;
+            }
+        }
+
+        return -1; // No suitable ground found
+    }
+
+    /**
+     * Generate tree within planet volume
+     */
+    private void generateTreeWithinPlanet(List<OreGenerator.BlockData> blocks, int x, int y, int z,
+                                      TreeGenerator.TreeType type, Random random, int cx, int cy, int cz, int radius) {
+
+        int height = type.minHeight + random.nextInt(type.maxHeight - type.minHeight + 1);
+
+        // Gövde - check planet bounds
+        for (int i = 0; i < height; i++) {
+            if (isWithinPlanetBounds(cx, cy, cz, x, y + i, z, radius)) {
+                blocks.add(new OreGenerator.BlockData(x, y + i, z, type.logMaterial));
+            }
+        }
+
+        // Yapraklar - check planet bounds
+        int leafStart = y + height - type.leafLayers;
+        for (int ly = 0; ly < type.leafLayers; ly++) {
+            int currentY = leafStart + ly;
+            int leafRadius = type.leafRadius - (ly / 2);
+
+            for (int dx = -leafRadius; dx <= leafRadius; dx++) {
+                for (int dz = -leafRadius; dz <= leafRadius; dz++) {
+                    if (dx == 0 && dz == 0 && ly < type.leafLayers - 1) continue; // Gövdeyi atla
+
+                    double distance = Math.sqrt(dx * dx + dz * dz);
+                    if (distance <= leafRadius + random.nextDouble() * 0.5) {
+                        if (isWithinPlanetBounds(cx, cy, cz, x + dx, currentY, z + dz, radius)) {
+                            blocks.add(new OreGenerator.BlockData(x + dx, currentY, z + dz, type.leafMaterial));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Özel özellikler (simplified for integration)
+        if (type == TreeGenerator.TreeType.OAK && random.nextDouble() < 0.15) {
+            // Arı kovanı ekle
+            int side = random.nextInt(4);
+            int beeY = y + height - 2;
+            if (isWithinPlanetBounds(cx, cy, cz, x + 1, beeY, z, radius)) {
+                blocks.add(new OreGenerator.BlockData(x + 1, beeY, z, Material.BEE_NEST));
+            }
+        }
+    }
+
+    /**
+     * Generate building within planet volume
+     */
+    private void generateBuildingWithinPlanet(List<OreGenerator.BlockData> blocks, int x, int y, int z,
+                                          StructureGenerator.BuildingType type, Random random, BiomeType biome,
+                                          com.skyorbs.core.PlanetType planetType, int cx, int cy, int cz, int radius) {
+
+        // Simplified building generation - only basic house for integration
+        if (type == StructureGenerator.BuildingType.VILLAGE) {
+            // Temel (7x7) - check planet bounds
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    if (isWithinPlanetBounds(cx, cy, cz, x + dx, y, z + dz, radius)) {
+                        blocks.add(new OreGenerator.BlockData(x + dx, y, z + dz, Material.OAK_PLANKS));
+                    }
+                }
+            }
+
+            // Duvarlar
+            for (int dy = 1; dy <= 3; dy++) {
+                for (int dx = -3; dx <= 3; dx++) {
+                    if (isWithinPlanetBounds(cx, cy, cz, x + dx, y + dy, z - 3, radius)) {
+                        blocks.add(new OreGenerator.BlockData(x + dx, y + dy, z - 3, Material.OAK_LOG));
+                    }
+                    if (isWithinPlanetBounds(cx, cy, cz, x + dx, y + dy, z + 3, radius)) {
+                        blocks.add(new OreGenerator.BlockData(x + dx, y + dy, z + 3, Material.OAK_LOG));
+                    }
+                }
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (isWithinPlanetBounds(cx, cy, cz, x - 3, y + dy, z + dz, radius)) {
+                        blocks.add(new OreGenerator.BlockData(x - 3, y + dy, z + dz, Material.OAK_LOG));
+                    }
+                    if (isWithinPlanetBounds(cx, cy, cz, x + 3, y + dy, z + dz, radius)) {
+                        blocks.add(new OreGenerator.BlockData(x + 3, y + dy, z + dz, Material.OAK_LOG));
+                    }
+                }
+            }
+
+            // Çatı
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    if (isWithinPlanetBounds(cx, cy, cz, x + dx, y + 4, z + dz, radius)) {
+                        blocks.add(new OreGenerator.BlockData(x + dx, y + 4, z + dz, Material.OAK_STAIRS));
+                    }
+                }
+            }
+
+            // Kapı
+            if (isWithinPlanetBounds(cx, cy, cz, x, y + 1, z - 3, radius)) {
+                blocks.add(new OreGenerator.BlockData(x, y + 1, z - 3, Material.OAK_DOOR));
+            }
+            if (isWithinPlanetBounds(cx, cy, cz, x, y + 2, z - 3, radius)) {
+                blocks.add(new OreGenerator.BlockData(x, y + 2, z - 3, Material.OAK_DOOR));
+            }
+        }
+    }
+
+    /**
+     * Check if position is within planet bounds
+     */
+    private boolean isWithinPlanetBounds(int cx, int cy, int cz, int x, int y, int z, int radius) {
+        double distance = Math.sqrt(
+            (x - cx) * (x - cx) +
+            (y - cy) * (y - cy) +
+            (z - cz) * (z - cz)
+        );
+        return distance <= radius;
+    }
+
+    /**
+     * Get integrated feature material at position
+     */
+    private Material getIntegratedFeatureMaterial(int x, int y, int z,
+                                                List<OreGenerator.BlockData> trees,
+                                                List<OreGenerator.BlockData> structures) {
+        // Check trees first
+        for (OreGenerator.BlockData tree : trees) {
+            if (tree.x == x && tree.y == y && tree.z == z) {
+                return tree.material;
+            }
+        }
+
+        // Check structures
+        for (OreGenerator.BlockData structure : structures) {
+            if (structure.x == x && structure.y == y && structure.z == z) {
+                return structure.material;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get tree config for integration (copied from TreeGenerator)
+     */
+    private TreeGenerator.TreeConfig getTreeConfigForIntegration(BiomeType biome) {
+        return switch (biome) {
+            case FOREST -> new TreeGenerator.TreeConfig(0.25,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.OAK, TreeGenerator.TreeType.BIRCH, TreeGenerator.TreeType.DARK_OAK},
+                new double[]{0.5, 0.3, 0.2});
+
+            case JUNGLE -> new TreeGenerator.TreeConfig(0.35,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.JUNGLE, TreeGenerator.TreeType.JUNGLE_LARGE},
+                new double[]{0.7, 0.3});
+
+            case TAIGA -> new TreeGenerator.TreeConfig(0.20,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.SPRUCE, TreeGenerator.TreeType.PINE},
+                new double[]{0.7, 0.3});
+
+            case SAVANNA -> new TreeGenerator.TreeConfig(0.08,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.ACACIA},
+                new double[]{1.0});
+
+            case MEADOW -> new TreeGenerator.TreeConfig(0.15,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.OAK, TreeGenerator.TreeType.BIRCH, TreeGenerator.TreeType.CHERRY},
+                new double[]{0.4, 0.4, 0.2});
+
+            case PLAINS -> new TreeGenerator.TreeConfig(0.05,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.OAK},
+                new double[]{1.0});
+
+            case MUSHROOM_GIANT -> new TreeGenerator.TreeConfig(0.12,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.GIANT_MUSHROOM_RED, TreeGenerator.TreeType.GIANT_MUSHROOM_BROWN},
+                new double[]{0.5, 0.5});
+
+            case TOXIC_SWAMP -> new TreeGenerator.TreeConfig(0.18,
+                new TreeGenerator.TreeType[]{TreeGenerator.TreeType.MANGROVE, TreeGenerator.TreeType.DARK_OAK},
+                new double[]{0.6, 0.4});
+
+            default -> null;
+        };
+    }
+
+    /**
+     * Get building type from config for integration (simplified)
+     */
+    private StructureGenerator.BuildingType getBuildingTypeFromConfigForIntegration(com.skyorbs.core.PlanetType planetType, Random random) {
+        // Simplified - just return village for now
+        return StructureGenerator.BuildingType.VILLAGE;
     }
 
     /**

@@ -15,6 +15,11 @@ public class StructureGenerator {
     public static List<OreGenerator.BlockData> generateStructures(Orb orb, BiomeType biome, World world) {
         List<OreGenerator.BlockData> blocks = new ArrayList<>();
 
+        // Hollow planets should only have trees, no structures
+        if (orb.getModifiers().contains(com.skyorbs.modifiers.PlanetModifier.HOLLOW)) {
+            return blocks;
+        }
+
         // CONFIG KONTROLLÜ - Build sistemi aktif mi?
         if (!com.skyorbs.SkyOrbs.getInstance().getConfig().getBoolean("buildings.enabled", true)) {
             return blocks;
@@ -45,14 +50,23 @@ public class StructureGenerator {
         int structureCount = (int)(radius * baseDensity * planetMultiplier);
 
         for (int i = 0; i < structureCount; i++) {
-            // Generate positions within planet bounds
-            int x = cx + random.nextInt(radius * 2) - radius;
-            int z = cz + random.nextInt(radius * 2) - radius;
-            int y = cy + radius; // Surface level
+            // Generate positions biased towards planet center
+            int x, z;
+            int attempts = 0;
+            do {
+                x = cx + random.nextInt(radius * 2) - radius;
+                z = cz + random.nextInt(radius * 2) - radius;
+                attempts++;
+                // Bias towards center - only accept positions within 60% of radius from center
+            } while (Math.sqrt((x - cx) * (x - cx) + (z - cz) * (z - cz)) > radius * 0.6 && attempts < 10);
+
+            // Find actual surface level within planet bounds
+            int y = findSurfaceLevelWithinPlanet(cx, cy, cz, x, z, radius, random);
+            if (y == -1) continue; // No surface found, skip this structure
 
             // CONFIG'DEN YAPILARI SEÇ - Gezegen türüne göre
             BuildingType type = getBuildingTypeFromConfig(planetType, random);
-    
+
             // Generate the structure - DEBUG: Her yapı için mesaj
             com.skyorbs.SkyOrbs.getInstance().getLogger().info("Generating building: " + type + " for planet type: " + planetType + " at " + x + "," + y + "," + z);
             generateBuilding(blocks, x, y, z, type, random, biome, planetType);
@@ -397,6 +411,31 @@ public class StructureGenerator {
     }
     
     /**
+     * Find surface level within planet bounds - ensures structures are placed on solid ground
+     */
+    private static int findSurfaceLevelWithinPlanet(int cx, int cy, int cz, int x, int z, int radius, Random random) {
+        // Start from top of planet and raycast downward to find first solid block
+        int searchStartY = cy + radius + 5;
+        int searchEndY = cy - radius;
+
+        for (int y = searchStartY; y >= searchEndY; y--) {
+            // Check if position is within planet bounds
+            double distanceFromCenter = Math.sqrt(
+                (x - cx) * (x - cx) +
+                (y - cy) * (y - cy) +
+                (z - cz) * (z - cz)
+            );
+
+            // Must be on or near surface (within 3 blocks of radius)
+            if (distanceFromCenter >= radius - 3 && distanceFromCenter <= radius + 1) {
+                return y; // Found surface level
+            }
+        }
+
+        return -1; // No suitable surface found
+    }
+
+    /**
      * CONFIG'DEN BUILDING TİPİ SEÇ - Gezegen türüne göre
      */
     private static BuildingType getBuildingTypeFromConfig(PlanetType planetType, Random random) {
@@ -462,7 +501,7 @@ public class StructureGenerator {
     /**
      * Building types - Gezegen türüne göre yapılar
      */
-    private enum BuildingType {
+    public enum BuildingType {
         // TERRESTRIAL
         VILLAGE, CASTLE, TEMPLE, RUINS,
 

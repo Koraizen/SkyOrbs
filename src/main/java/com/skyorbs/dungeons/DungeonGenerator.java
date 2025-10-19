@@ -59,13 +59,22 @@ public class DungeonGenerator {
             boolean placed = false;
 
             while (!placed && attempts < 50) {
-                // Generate position within planet
+                // Generate position biased towards planet center
                 double angle = random.nextDouble() * 2 * Math.PI;
-                double distance = random.nextDouble() * (radius * 0.8); // Keep away from edges
+                double distance = random.nextDouble() * (radius * 0.6); // Bias towards center - max 60% of radius
 
                 int x = cx + (int)(Math.cos(angle) * distance);
                 int z = cz + (int)(Math.sin(angle) * distance);
-                int y = cy + random.nextInt(radius * 2) - radius;
+
+                // Find surface level first, then place dungeon below it
+                int surfaceY = findSurfaceLevelWithinPlanet(cx, cy, cz, x, z, radius, random);
+                if (surfaceY == -1) {
+                    attempts++;
+                    continue; // No surface found, try again
+                }
+
+                // Place dungeon below surface, within planet bounds
+                int y = surfaceY - (3 + random.nextInt(5)); // 3-7 blocks below surface
 
                 // Check if location is valid (inside planet, not too close to surface)
                 double distFromCenter = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy) + (z - cz) * (z - cz));
@@ -256,6 +265,31 @@ public class DungeonGenerator {
         // This would integrate with Minecraft's mob spawning system
         // For now, we'll just mark that mobs should spawn here
         room.hasMobs = random.nextDouble() < 0.7; // 70% chance of mobs
+    }
+
+    /**
+     * Find surface level within planet bounds - ensures dungeons are placed within planet volume
+     */
+    private int findSurfaceLevelWithinPlanet(int cx, int cy, int cz, int x, int z, int radius, Random random) {
+        // Start from top of planet and raycast downward to find first solid block
+        int searchStartY = cy + radius + 5;
+        int searchEndY = cy - radius;
+
+        for (int y = searchStartY; y >= searchEndY; y--) {
+            // Check if position is within planet bounds
+            double distanceFromCenter = Math.sqrt(
+                (x - cx) * (x - cx) +
+                (y - cy) * (y - cy) +
+                (z - cz) * (z - cz)
+            );
+
+            // Must be on or near surface (within 3 blocks of radius)
+            if (distanceFromCenter >= radius - 3 && distanceFromCenter <= radius + 1) {
+                return y; // Found surface level
+            }
+        }
+
+        return -1; // No suitable surface found
     }
 
     /**

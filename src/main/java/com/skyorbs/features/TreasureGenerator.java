@@ -49,7 +49,13 @@ public class TreasureGenerator {
         for (int i = 0; i < treasureCount; i++) {
             int x = cx + random.nextInt(radius * 2) - radius;
             int z = cz + random.nextInt(radius * 2) - radius;
-            int y = cy + radius - (5 + random.nextInt(10));
+
+            // Find actual surface level within planet bounds for treasure placement
+            int y = findSurfaceLevelWithinPlanet(cx, cy, cz, x, z, radius, random);
+            if (y == -1) continue; // No surface found, skip this treasure
+
+            // Place treasure slightly below surface (buried)
+            y = y - (1 + random.nextInt(3)); // 1-3 blocks below surface
 
             // CONFIG'DEN TREASURE TİPİ SEÇ - Gezegen türüne göre
             TreasureType type = getTreasureTypeFromConfig(planetType, random);
@@ -371,6 +377,31 @@ public class TreasureGenerator {
             case VOID, CHORUS_LAND -> baseMultiplier * 1.1;
             default -> baseMultiplier;
         };
+    }
+
+    /**
+     * Find surface level within planet bounds - ensures treasures are placed on solid ground
+     */
+    private static int findSurfaceLevelWithinPlanet(int cx, int cy, int cz, int x, int z, int radius, Random random) {
+        // Start from top of planet and raycast downward to find first solid block
+        int searchStartY = cy + radius + 5;
+        int searchEndY = cy - radius;
+
+        for (int y = searchStartY; y >= searchEndY; y--) {
+            // Check if position is within planet bounds
+            double distanceFromCenter = Math.sqrt(
+                (x - cx) * (x - cx) +
+                (y - cy) * (y - cy) +
+                (z - cz) * (z - cz)
+            );
+
+            // Must be on or near surface (within 3 blocks of radius)
+            if (distanceFromCenter >= radius - 3 && distanceFromCenter <= radius + 1) {
+                return y; // Found surface level
+            }
+        }
+
+        return -1; // No suitable surface found
     }
 
     /**
