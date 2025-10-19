@@ -30,12 +30,12 @@ public class PlacementService {
             long now = System.currentTimeMillis();
             int cleaned = 0;
             
-            Iterator<Map.Entry<String, Long>> iterator = reservedLocations.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, Long> entry = iterator.next();
+            // Thread-safe iteration and removal for ConcurrentHashMap
+            for (Map.Entry<String, Long> entry : reservedLocations.entrySet()) {
                 if (now - entry.getValue() > RESERVATION_TIMEOUT) {
-                    iterator.remove();
-                    cleaned++;
+                    if (reservedLocations.remove(entry.getKey(), entry.getValue())) {
+                        cleaned++;
+                    }
                 }
             }
             
@@ -160,7 +160,7 @@ public class PlacementService {
 
         // Rezerve edilmiş konum kontrolü
         String key = x + "," + z;
-        if (reservedLocations.contains(key)) {
+        if (reservedLocations.containsKey(key)) {
             return true;
         }
 

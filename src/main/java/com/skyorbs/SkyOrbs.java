@@ -455,6 +455,10 @@ public class SkyOrbs extends JavaPlugin {
         getLogger().log(Level.SEVERE, message, e);
     }
     
+    public void logError(String message, Throwable e) {
+        getLogger().log(Level.SEVERE, message, e);
+    }
+    
     public void logDebug(String category, String message) {
         if (configManager != null) {
             configManager.sendDebugMessage(category, message);
