@@ -1,0 +1,3 @@
+-cp
+../../../lib/*
+com/skyorbs/generation/GenerationManager.java

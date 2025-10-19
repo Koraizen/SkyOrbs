@@ -1,0 +1,120 @@
+name: SkyOrbs
+version: 2.0.0
+main: com.skyorbs.SkyOrbs
+api-version: 1.21
+author: YourName
+description: Türkçe Minecraft gezegen oluşturma eklentisi - 17 şekil, 22 biyom, asteroid ve uydu sistemi
+website: https://yourwebsite.com
+
+# Komutlar
+commands:
+  gezegen:
+    description: Gezegen yönetim komutları
+    aliases: [planet, orb, skyorb]
+    usage: |
+      /<command> create - Yeni gezegen oluştur
+      /<command> list - Tüm gezegenleri listele
+      /<command> tp <isim> - Gezegene ışınlan
+      /<command> info <isim> - Gezegen bilgilerini göster
+      /<command> sil <isim> - Gezegeni sil (Admin)
+      /<command> reload - Konfigürasyonu yenile (Admin)
+    permission: skyorbs.use
+    permission-message: §cBu komutu kullanma yetkiniz yok!
+
+# İzinler
+permissions:
+  skyorbs.*:
+    description: Tüm SkyOrbs izinleri
+    default: op
+    children:
+      skyorbs.use: true
+      skyorbs.create: true
+      skyorbs.list: true
+      skyorbs.teleport: true
+      skyorbs.info: true
+      skyorbs.admin: true
+  
+  skyorbs.use:
+    description: Temel gezegen komutlarını kullanma
+    default: true
+  
+  skyorbs.create:
+    description: Gezegen oluşturma izni
+    default: true
+  
+  skyorbs.list:
+    description: Gezegenleri listeleme izni
+    default: true
+  
+  skyorbs.teleport:
+    description: Gezegenlere ışınlanma izni
+    default: true
+  
+  skyorbs.teleport.others:
+    description: Başkalarını gezegenlere ışınlatma
+    default: op
+  
+  skyorbs.info:
+    description: Gezegen bilgilerini görme
+    default: true
+  
+  skyorbs.delete:
+    description: Gezegen silme izni (kendi gezegenleri)
+    default: false
+  
+  skyorbs.admin:
+    description: Admin komutları (reload, tüm gezegenleri silme)
+    default: op
+    children:
+      skyorbs.delete.others: true
+      skyorbs.reload: true
+      skyorbs.bypass.limit: true
+      skyorbs.bypass.cooldown: true
+  
+  skyorbs.delete.others:
+    description: Başkalarının gezegenlerini silme
+    default: op
+  
+  skyorbs.reload:
+    description: Konfigürasyonu yenileme
+    default: op
+  
+  skyorbs.bypass.limit:
+    description: Gezegen limitini atlama
+    default: op
+  
+  skyorbs.bypass.cooldown:
+    description: Cooldown'u atlama
+    default: op
+  
+  skyorbs.create.size.small:
+    description: Küçük gezegen oluşturma
+    default: true
+  
+  skyorbs.create.size.medium:
+    description: Orta gezegen oluşturma
+    default: true
+  
+  skyorbs.create.size.large:
+    description: Büyük gezegen oluşturma
+    default: op
+  
+  skyorbs.create.unlimited:
+    description: Sınırsız gezegen oluşturma
+    default: op
+
+# Yumuşak bağımlılıklar (opsiyonel)
+softdepend:
+  - Vault
+  - WorldGuard
+  - PlaceholderAPI
+  - dynmap
+
+# Minimum gereksinimler
+depend: []
+
+# Load zamanı
+load: POSTWORLD
+
+# Prefix
+prefix: SkyOrbs
