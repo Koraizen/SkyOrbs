@@ -2,20 +2,47 @@ package com.skyorbs.generation;
 
 import com.skyorbs.SkyOrbs;
 import com.skyorbs.core.Orb;
+import org.bukkit.Bukkit;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class PlacementService {
     
     private final SkyOrbs plugin;
-    private final Set<String> reservedLocations = new HashSet<String>();
+    private final ConcurrentHashMap<String, Long> reservedLocations = new ConcurrentHashMap<>();
     private final Random random = new Random();
+    private static final long RESERVATION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
     
     public PlacementService(SkyOrbs plugin) {
         this.plugin = plugin;
+        startCleanupTask();
+    }
+    
+    /**
+     * Start scheduled task to clean stale reservations
+     */
+    private void startCleanupTask() {
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            long now = System.currentTimeMillis();
+            int cleaned = 0;
+            
+            Iterator<Map.Entry<String, Long>> iterator = reservedLocations.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Long> entry = iterator.next();
+                if (now - entry.getValue() > RESERVATION_TIMEOUT) {
+                    iterator.remove();
+                    cleaned++;
+                }
+            }
+            
+            if (cleaned > 0 && plugin.getConfigManager().isDebugEnabled()) {
+                plugin.logDebug("placement", "Cleaned " + cleaned + " stale location reservations");
+            }
+        }, 100L, 6000L); // Run every 5 minutes (6000 ticks)
     }
     
     public PlacementResult findPlacement(int radius, List<Orb> existingOrbs) {
@@ -186,11 +213,18 @@ public class PlacementService {
     }
     
     public void reserveLocation(int x, int z) {
-        reservedLocations.add(x + "," + z);
+        reservedLocations.put(x + "," + z, System.currentTimeMillis());
     }
     
     public void releaseLocation(int x, int z) {
         reservedLocations.remove(x + "," + z);
+    }
+    
+    /**
+     * Get count of currently reserved locations
+     */
+    public int getReservedCount() {
+        return reservedLocations.size();
     }
     
     public static class PlacementResult {

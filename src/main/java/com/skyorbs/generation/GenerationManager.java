@@ -389,7 +389,15 @@ public class GenerationManager {
              }
 
              return result;
-         }, executor).thenAcceptAsync(result -> {
+         }, executor).exceptionally(ex -> {
+             plugin.logError("Planet shell generation failed for " + orb.getName(), ex);
+             if (player != null) {
+                 Bukkit.getScheduler().runTask(plugin, () ->
+                     player.sendMessage("§cGezegen kabuğu oluşturulamadı: " + ex.getMessage())
+                 );
+             }
+             return new PlanetGenerationResult(new java.util.ArrayList<>(), null);
+         }).thenAcceptAsync(result -> {
              List<BlockPlacement> blocks = result.blocks;
              BlockPlacement firstBlock = result.firstBlock;
 
@@ -900,7 +908,10 @@ public class GenerationManager {
                         }
                     }
                 }
-            }, executor);
+            }, executor).exceptionally(ex -> {
+                plugin.logWarning("Chunk loading batch failed: " + ex.getMessage());
+                return null;
+            });
 
             futures.add(batchFuture);
         }
@@ -1423,13 +1434,24 @@ public class GenerationManager {
     }
 
     public void shutdown() {
+        plugin.logInfo("Shutting down generation manager...");
         executor.shutdown();
         try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+            // Increased timeout from 5 to 30 seconds to prevent data loss
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                plugin.logWarning("Generation tasks did not complete in time, forcing shutdown...");
                 executor.shutdownNow();
+                // Wait a bit more for forced shutdown
+                if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    plugin.logError("Some generation tasks may not have completed cleanly", null);
+                }
+            } else {
+                plugin.logSuccess("All generation tasks completed successfully");
             }
         } catch (InterruptedException e) {
+            plugin.logWarning("Shutdown interrupted, forcing immediate shutdown...");
             executor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
     
