@@ -27,12 +27,24 @@ public class NoiseGenerator {
         int offsetX = seedRand.nextInt(10000);
         int offsetY = seedRand.nextInt(10000);
         int offsetZ = seedRand.nextInt(10000);
-        
+
         double nx = (x + offsetX) * frequency;
         double ny = (y + offsetY) * frequency;
         double nz = (z + offsetZ) * frequency;
-        
+
         return perlinNoise(nx, ny, nz);
+    }
+
+    /**
+     * Get 3D noise value for regional coherence in planet generation
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param z Z coordinate
+     * @param seed World seed
+     * @return Noise value between -1 and 1
+     */
+    public static double getNoise3D(double x, double y, double z, long seed) {
+        return getNoise((int)x, (int)y, (int)z, seed, 0.01);
     }
     
     private static double perlinNoise(double x, double y, double z) {
@@ -80,5 +92,14 @@ public class NoiseGenerator {
         double u = h < 8 ? x : y;
         double v = h < 4 ? y : h == 12 || h == 14 ? x : z;
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+    }
+
+    /**
+     * Simplex noise 3D for ore vein generation
+     * Returns value between -1 and 1
+     */
+    public static double simplexNoise3D(double x, double y, double z) {
+        // Simple implementation using existing perlin noise
+        return perlinNoise(x, y, z);
     }
 }

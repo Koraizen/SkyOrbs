@@ -5,7 +5,7 @@ import com.skyorbs.config.ConfigManager;
 import com.skyorbs.generation.GenerationManager;
 import com.skyorbs.shapes.ShapeRegistry;
 import com.skyorbs.storage.DatabaseManager;
-import main.java.com.skyorbs.storage.PlanetDataManager;
+import com.skyorbs.storage.PlanetDataManager;
 import com.skyorbs.dungeons.DungeonGenerator;
 import com.skyorbs.palettes.PaletteRegistry;
 import com.skyorbs.atmosphere.PlanetAtmosphereManager;

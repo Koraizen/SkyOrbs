@@ -1,4 +1,4 @@
-package main.java.com.skyorbs.storage;
+package com.skyorbs.storage;
 
 import com.skyorbs.SkyOrbs;
 import com.skyorbs.core.Orb;

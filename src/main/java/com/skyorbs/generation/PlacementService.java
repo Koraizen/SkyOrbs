@@ -58,7 +58,7 @@ public class PlacementService {
             }
             
             if (!checkOverlap(candidateX, candidateZ, radius, existingOrbs)) {
-                int y = 120 + random.nextInt(41) - 20;
+                int y = 100 + random.nextInt(21) - 10; // 90-110 arası, daha güvenli
                 return new PlacementResult(candidateX, y, candidateZ, true);
             }
         }
@@ -67,31 +67,49 @@ public class PlacementService {
     }
     
     private PlacementResult trySpiralPlacement(int radius, List<Orb> existingOrbs, int maxDistance, int centerX, int centerZ, int minFromSpawn) {
-        int ringStep = 200;
-        int angleStep = 15;
-        
-        for (int ring = 5; ring <= 15; ring++) {
+        int ringStep = 150; // Daha sık halkalar - 200'den 150'ye
+        int angleStep = 10; // Daha sık açılar - 15'den 10'a
+
+        // DAHA FAZLA DENEME - 300 halka (config'e göre maxDistance'a kadar)
+        for (int ring = 3; ring <= 300; ring++) {
             int ringDist = ring * ringStep;
             if (ringDist > maxDistance) {
                 break;
             }
-            
+
             for (int angle = 0; angle < 360; angle += angleStep) {
                 double rad = Math.toRadians(angle);
                 int candidateX = centerX + (int)(Math.cos(rad) * ringDist);
                 int candidateZ = centerZ + (int)(Math.sin(rad) * ringDist);
-                
+
                 if (!validateDistance(candidateX, candidateZ, maxDistance, centerX, centerZ, minFromSpawn)) {
                     continue;
                 }
-                
+
                 if (!checkOverlap(candidateX, candidateZ, radius, existingOrbs)) {
-                    int y = 120 + random.nextInt(41) - 20;
+                    int y = 100 + random.nextInt(21) - 10; // 90-110 arası, daha güvenli
                     return new PlacementResult(candidateX, y, candidateZ, true);
                 }
             }
         }
-        
+
+        // SON ÇARE - Rastgele konumlar dene (ARTIRILDI)
+        for (int attempt = 0; attempt < 10000; attempt++) { // 5000'den 10000'e
+            double angle = random.nextDouble() * 2 * Math.PI;
+            int distance = minFromSpawn + random.nextInt(maxDistance - minFromSpawn);
+            int candidateX = centerX + (int)(Math.cos(angle) * distance);
+            int candidateZ = centerZ + (int)(Math.sin(angle) * distance);
+
+            if (!validateDistance(candidateX, candidateZ, maxDistance, centerX, centerZ, minFromSpawn)) {
+                continue;
+            }
+
+            if (!checkOverlap(candidateX, candidateZ, radius, existingOrbs)) {
+                int y = 100 + random.nextInt(21) - 10;
+                return new PlacementResult(candidateX, y, candidateZ, true);
+            }
+        }
+
         return new PlacementResult(0, 0, 0, false);
     }
     
@@ -106,7 +124,7 @@ public class PlacementService {
         // İlk olarak diğer gezegenlerle çakışma kontrolü
         for (Orb orb : existingOrbs) {
             double distance = orb.getDistanceFrom(x, z);
-            int safeDistance = orb.getRadius() + newRadius + 800; // DAHA FAZLA MESAFE - 800 blok güvenli mesafe
+            int safeDistance = orb.getRadius() + newRadius + 1200; // DAHA FAZLA MESAFE - 1200 blok güvenli mesafe
 
             if (distance < safeDistance) {
                 return true;
@@ -119,17 +137,19 @@ public class PlacementService {
             return true;
         }
 
-        // BLOK KONTROLÜ - Oluşacak yerde blok varsa oluşmasın
-        return hasBlocksAtLocation(x, z, newRadius);
+        // BLOK KONTROLÜ - Daha az katı kontrol, sadece çok yoğun blok kümeleri varsa red et
+        return hasTooManyBlocksAtLocation(x, z, newRadius);
     }
 
     /**
-     * Belirtilen konumda blok olup olmadığını kontrol eder
+     * Belirtilen konumda çok fazla blok olup olmadığını kontrol eder (daha toleranslı)
      */
-    private boolean hasBlocksAtLocation(int x, int z, int radius) {
+    private boolean hasTooManyBlocksAtLocation(int x, int z, int radius) {
         // Gezegen oluşacak alanda örnekleme yap
-        int samplePoints = Math.min(10, radius / 5 + 1); // Radius'a göre örnek sayısı
+        int samplePoints = Math.min(8, radius / 5 + 1); // Daha az örnek
         int step = Math.max(1, radius / samplePoints);
+        int blockCount = 0;
+        int totalChecks = 0;
 
         for (int dx = -radius; dx <= radius; dx += step) {
             for (int dz = -radius; dz <= radius; dz += step) {
@@ -140,16 +160,19 @@ public class PlacementService {
                     int checkZ = z + dz;
 
                     // Yükseklik aralığında kontrol et (yeryüzü seviyesinde)
-                    for (int y = 50; y <= 150; y += 10) { // 50-150 arası 10'ar blok kontrol
+                    for (int y = 60; y <= 140; y += 20) { // Daha az kontrol, 60-140 arası 20'er
+                        totalChecks++;
                         // World instance'ı plugin'den al
                         if (plugin.getServer().getWorlds().size() > 0) {
                             var world = plugin.getServer().getWorlds().get(0); // Ana dünya
                             if (world != null) {
                                 var block = world.getBlockAt(checkX, y, checkZ);
                                 var type = block.getType();
-                                // Hava veya su dışında blok varsa çakışma var
-                                if (!type.isAir() && type != org.bukkit.Material.WATER && type != org.bukkit.Material.LAVA) {
-                                    return true;
+                                // Hava, su, lava, kar dışında blok varsa say
+                                if (!type.isAir() && type != org.bukkit.Material.WATER &&
+                                    type != org.bukkit.Material.LAVA && type != org.bukkit.Material.SNOW &&
+                                    type != org.bukkit.Material.SNOW_BLOCK) {
+                                    blockCount++;
                                 }
                             }
                         }
@@ -158,7 +181,8 @@ public class PlacementService {
             }
         }
 
-        return false; // Blok bulunamadı, güvenli
+        // %30'dan fazla blok varsa çakışma var kabul et
+        return totalChecks > 0 && (blockCount * 100.0 / totalChecks) > 30.0;
     }
     
     public void reserveLocation(int x, int z) {

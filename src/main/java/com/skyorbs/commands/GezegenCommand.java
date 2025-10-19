@@ -25,9 +25,9 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
             sendHelp(sender);
             return true;
         }
-        
+
         switch (args[0].toLowerCase()) {
-            case "create", "oluştur" -> handleCreate(sender);
+            case "create", "oluştur" -> handleCreate(sender, args);
             case "list", "liste" -> handleList(sender);
             case "tp", "teleport", "ışınlan" -> handleTeleport(sender, args);
             case "sil", "delete" -> handleDelete(sender, args);
@@ -38,23 +38,40 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
             case "config", "ayar" -> handleConfig(sender, args);
             default -> sendHelp(sender);
         }
-        
+
         return true;
     }
     
-    private void handleCreate(CommandSender sender) {
+    private void handleCreate(CommandSender sender, String[] args) {
         if (!sender.hasPermission("skyorbs.create")) {
             sender.sendMessage(plugin.getConfigManager().getMessage("noPermission"));
             return;
         }
-        
+
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getConfigManager().getMessage("playerOnly"));
             return;
         }
-        
+
+        // ŞEKİL BELİRTİLMİŞ Mİ KONTROL ET
+        String shapeName = null;
+        if (args.length > 1) {
+            shapeName = args[1].toUpperCase();
+            // Geçerli şekil mi kontrol et
+            if (!plugin.getShapeRegistry().getShapeNames().contains(shapeName)) {
+                sender.sendMessage("§cGeçersiz şekil: " + shapeName);
+                sender.sendMessage("§7Mevcut şekiller: " + String.join(", ", plugin.getShapeRegistry().getShapeNames()));
+                return;
+            }
+        }
+
+        // YER BULUNAMAZSA UYARI VER
+        player.sendMessage("§eGezegen oluşturuluyor... Eğer uygun yer bulunamazsa config'den mesafeleri ayarlayın!");
+        player.sendMessage("§7Mevcut ayarlar: Max mesafe " + plugin.getConfigManager().getMaxDistance() +
+                          ", Min mesafe " + plugin.getConfigManager().getMinDistanceFromSpawn());
+
         World world = player.getWorld();
-        plugin.getGenerationManager().createPlanetAsync(world, player);
+        plugin.getGenerationManager().createPlanetAsync(world, player, shapeName);
     }
     
     private void handleList(CommandSender sender) {
@@ -693,7 +710,11 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
     
     private void sendHelp(CommandSender sender) {
         sender.sendMessage("§b═══ Gezegen Komutları ═══");
-        sender.sendMessage("§e/gezegen create §7- Yeni gezegen oluştur");
+        sender.sendMessage("§e/gezegen create [şekil] §7- Yeni gezegen oluştur (isteğe bağlı şekil belirt)");
+        sender.sendMessage("§7Örnek: §f/gezegen create STAR §7(yıldız şeklinde)");
+        sender.sendMessage("§7Mevcut şekiller: §fSPHERE, STAR, RAINBOW, BUTTERFLY, MOON, DIAMOND, HEART");
+        sender.sendMessage("§7ve daha fazlası...");
+        sender.sendMessage("");
         sender.sendMessage("§e/gezegen list §7- Tüm gezegenleri listele");
         sender.sendMessage("§e/gezegen tp <isim> §7- Gezegene ışınlan");
         sender.sendMessage("§e/gezegen info <isim> §7- Gezegen bilgilerini göster");
@@ -726,7 +747,12 @@ public class GezegenCommand implements CommandExecutor, TabCompleter {
                 return new ArrayList<>();
             }
         }
-        
+
+        // ŞEKİL TAB COMPLETION - create komutu için
+        if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
+            return new ArrayList<>(plugin.getShapeRegistry().getShapeNames());
+        }
+
         return new ArrayList<>();
     }
 }

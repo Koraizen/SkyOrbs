@@ -21,8 +21,8 @@ public class TreasureGenerator {
     public static List<TreasureLocation> generateTreasures(Orb orb, BiomeType biome, World world) {
         SkyOrbs plugin = SkyOrbs.getInstance();
 
-        // Config kontrolü
-        if (!plugin.getConfigManager().isTreasureGenerationEnabled()) {
+        // CONFIG KONTROLLÜ - Treasure sistemi aktif mi?
+        if (!plugin.getConfig().getBoolean("treasures.enabled", true)) {
             return new ArrayList<TreasureLocation>();
         }
 
@@ -37,18 +37,22 @@ public class TreasureGenerator {
 
         PlanetType planetType = orb.getPlanetType();
 
-        // Biome AND planet type aware treasure density
-        double densityMultiplier = plugin.getConfigManager().getTreasureDensityMultiplier();
-        double biomeMultiplier = getBiomeTreasureMultiplier(biome, planetType);
-        int treasureCount = Math.max(1, (int)(radius * 0.015 * densityMultiplier * biomeMultiplier));
+        // CONFIG'DEN PLANET TYPE AYARLARINI OKU
+        String planetTypeKey = planetType.name().toLowerCase();
+        boolean planetEnabled = plugin.getConfig().getBoolean("treasures.planetTypes." + planetTypeKey + ".enabled", true);
+        if (!planetEnabled) return treasures;
+
+        double baseDensity = plugin.getConfig().getDouble("treasures.densityMultiplier", 0.008);
+        double planetMultiplier = plugin.getConfig().getDouble("treasures.planetTypes." + planetTypeKey + ".densityMultiplier", 1.0);
+        int treasureCount = Math.max(1, (int)(radius * baseDensity * planetMultiplier));
 
         for (int i = 0; i < treasureCount; i++) {
             int x = cx + random.nextInt(radius * 2) - radius;
             int z = cz + random.nextInt(radius * 2) - radius;
             int y = cy + radius - (5 + random.nextInt(10));
 
-            // Determine treasure type based on biome AND planet type
-            TreasureType type = getTreasureType(biome, planetType, random);
+            // CONFIG'DEN TREASURE TİPİ SEÇ - Gezegen türüne göre
+            TreasureType type = getTreasureTypeFromConfig(planetType, random);
 
             treasures.add(new TreasureLocation(x, y, z, biome, type));
         }
@@ -370,28 +374,31 @@ public class TreasureGenerator {
     }
 
     /**
-     * Determine treasure type based on biome AND planet type
+     * CONFIG'DEN TREASURE TİPİ SEÇ - Gezegen türüne göre
      */
-    private static TreasureType getTreasureType(BiomeType biome, PlanetType planetType, Random random) {
+    private static TreasureType getTreasureTypeFromConfig(PlanetType planetType, Random random) {
         SkyOrbs plugin = SkyOrbs.getInstance();
+        String planetTypeKey = planetType.name().toLowerCase();
+        String configPath = "treasures.planetTypes." + planetTypeKey + ".treasureTypes";
+
+        // Config'den olasılıkları oku
+        double commonProb = plugin.getConfig().getDouble(configPath + ".common", 0.55);
+        double uncommonProb = plugin.getConfig().getDouble(configPath + ".uncommon", 0.25);
+        double rareProb = plugin.getConfig().getDouble(configPath + ".rare", 0.12);
+        double epicProb = plugin.getConfig().getDouble(configPath + ".epic", 0.06);
+        double legendaryProb = plugin.getConfig().getDouble(configPath + ".legendary", 0.02);
+
+        // Weighted random selection
         double rand = random.nextDouble();
+        double total = 0;
 
-        // Planet type affects legendary chance
-        double legendaryMult = plugin.getConfigManager().getLegendaryChanceMultiplier();
-        double planetBonus = switch (planetType) {
-            case CRYSTAL -> 3.0;
-            case LAVA, SHADOW -> 2.5;
-            case ICE -> 2.0;
-            default -> 1.0;
-        };
+        if ((total += commonProb) > rand) return TreasureType.COMMON;
+        if ((total += uncommonProb) > rand) return TreasureType.UNCOMMON;
+        if ((total += rareProb) > rand) return TreasureType.RARE;
+        if ((total += epicProb) > rand) return TreasureType.EPIC;
+        if ((total += legendaryProb) > rand) return TreasureType.LEGENDARY;
 
-        double biomeLegendaryBonus = getBiomeLegendaryBonus(biome);
-        double totalBonus = legendaryMult * planetBonus * biomeLegendaryBonus;
-
-        if (rand < (0.02 * totalBonus)) return TreasureType.LEGENDARY;
-        if (rand < 0.08) return TreasureType.EPIC;
-        if (rand < 0.20) return TreasureType.RARE;
-        if (rand < 0.45) return TreasureType.UNCOMMON;
+        // Fallback
         return TreasureType.COMMON;
     }
 

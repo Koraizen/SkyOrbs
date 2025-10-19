@@ -32,7 +32,7 @@ public class ShapeRegistry {
         register(new CrescentShape());
         register(new HybridShape());
         
-        // NEW: Diverse shapes (10 more) - 28 TOTAL!
+        // NEW: Diverse shapes (15 more) - 33 TOTAL!
         register(new LayeredShape());
         register(new CrateredShape());
         register(new HoneycombShape());
@@ -43,6 +43,13 @@ public class ShapeRegistry {
         register(new GeometricShape());
         register(new NebulaShape());
         register(new AsteroidFieldShape());
+
+        // EXTRA NEW SHAPES for more variety!
+        register(new StarShape());
+        register(new MoonShape());
+        register(new RainbowShape());
+        register(new ButterflyShape());
+        register(new HeartShape());
     }
     
     public void register(PlanetShape shape) {

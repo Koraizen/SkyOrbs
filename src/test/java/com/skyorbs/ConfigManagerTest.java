@@ -38,7 +38,7 @@ public class ConfigManagerTest {
 
     @Test
     public void testPlacementSettings() {
-        assertEquals(3000, configManager.getMaxDistance());
+        assertEquals(50000, configManager.getMaxDistance());
         assertEquals(0, configManager.getCenterX());
         assertEquals(0, configManager.getCenterZ());
         assertTrue(configManager.isClusteringEnabled());

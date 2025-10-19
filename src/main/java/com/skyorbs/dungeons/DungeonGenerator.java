@@ -22,9 +22,16 @@ public class DungeonGenerator {
     }
 
     /**
-     * Generate mini-dungeons within planets
+     * Generate mini-dungeons within planets - CONFIG KONTROLLÜ
      */
     public List<DungeonRoom> generateDungeons(Orb orb, int count) {
+        SkyOrbs plugin = SkyOrbs.getInstance();
+
+        // CONFIG KONTROLLÜ - Dungeon sistemi aktif mi?
+        if (!plugin.getConfig().getBoolean("dungeons.enabled", true)) {
+            return new ArrayList<DungeonRoom>();
+        }
+
         List<DungeonRoom> dungeons = new ArrayList<DungeonRoom>();
         int cx = orb.getCenterX();
         int cy = orb.getCenterY();
@@ -32,10 +39,21 @@ public class DungeonGenerator {
         int radius = orb.getRadius();
         long seed = orb.getSeed();
 
+        PlanetType planetType = orb.getPlanetType();
+
+        // CONFIG'DEN PLANET TYPE AYARLARINI OKU
+        String planetTypeKey = planetType.name().toLowerCase();
+        boolean planetEnabled = plugin.getConfig().getBoolean("dungeons.planetTypes." + planetTypeKey + ".enabled", true);
+        if (!planetEnabled) return dungeons;
+
+        double baseDensity = plugin.getConfig().getDouble("dungeons.densityMultiplier", 0.008);
+        double planetMultiplier = plugin.getConfig().getDouble("dungeons.planetTypes." + planetTypeKey + ".densityMultiplier", 1.0);
+        int actualCount = (int)(count * planetMultiplier);
+
         SimplexOctaveGenerator dungeonNoise = new SimplexOctaveGenerator(seed + 500, 4);
         dungeonNoise.setScale(0.01);
 
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < actualCount; i++) {
             // Find suitable location for dungeon
             int attempts = 0;
             boolean placed = false;
@@ -67,12 +85,24 @@ public class DungeonGenerator {
 
     private DungeonRoom generateDungeonRoom(Orb orb, int x, int y, int z, long seed) {
         Random roomRandom = new Random(seed);
-        DungeonType type = getDungeonTypeForPlanet(orb.getPlanetType(), roomRandom);
+        DungeonType type = getDungeonTypeFromConfig(orb.getPlanetType(), roomRandom);
 
-        // Room size based on dungeon type
-        int width = type.baseSize + roomRandom.nextInt(3);
-        int height = type.baseSize + roomRandom.nextInt(2);
-        int length = type.baseSize + roomRandom.nextInt(3);
+        // CONFIG'DEN ROOM SIZE AYARLARINI OKU
+        SkyOrbs plugin = SkyOrbs.getInstance();
+        String planetTypeKey = orb.getPlanetType().name().toLowerCase();
+        String sizePath = "dungeons.planetTypes." + planetTypeKey + ".sizeSettings.";
+
+        int minWidth = plugin.getConfig().getInt(sizePath + "width.min", type.baseSize);
+        int maxWidth = plugin.getConfig().getInt(sizePath + "width.max", type.baseSize + 3);
+        int minHeight = plugin.getConfig().getInt(sizePath + "height.min", type.baseSize);
+        int maxHeight = plugin.getConfig().getInt(sizePath + "height.max", type.baseSize + 2);
+        int minLength = plugin.getConfig().getInt(sizePath + "length.min", type.baseSize);
+        int maxLength = plugin.getConfig().getInt(sizePath + "length.max", type.baseSize + 3);
+
+        // Room size based on config
+        int width = minWidth + roomRandom.nextInt(maxWidth - minWidth + 1);
+        int height = minHeight + roomRandom.nextInt(maxHeight - minHeight + 1);
+        int length = minLength + roomRandom.nextInt(maxLength - minLength + 1);
 
         // Create room bounds
         int minX = x - width/2;
@@ -335,16 +365,33 @@ public class DungeonGenerator {
         };
     }
 
-    private DungeonType getDungeonTypeForPlanet(PlanetType planetType, Random random) {
-        return switch (planetType) {
-            case TERRESTRIAL -> DungeonType.values()[random.nextInt(DungeonType.values().length)];
-            case GAS -> DungeonType.CRYSTAL_CAVERN; // Gas planets have crystal formations
-            case LAVA -> DungeonType.LAVA_CHAMBER;
-            case ICE -> DungeonType.ICE_TOMB;
-            case CRYSTAL -> DungeonType.CRYSTAL_CAVERN;
-            case SHADOW -> DungeonType.SHADOW_VAULT;
-            case TOXIC -> DungeonType.TOXIC_LAB;
-        };
+    /**
+     * CONFIG'DEN DUNGEON TİPİ SEÇ - Gezegen türüne göre
+     */
+    private DungeonType getDungeonTypeFromConfig(PlanetType planetType, Random random) {
+        SkyOrbs plugin = SkyOrbs.getInstance();
+        String planetTypeKey = planetType.name().toLowerCase();
+        String configPath = "dungeons.planetTypes." + planetTypeKey + ".dungeonTypes";
+
+        // Config'den olasılıkları oku
+        double crystalCavernProb = plugin.getConfig().getDouble(configPath + ".crystal_cavern", 0.0);
+        double lavaChamberProb = plugin.getConfig().getDouble(configPath + ".lava_chamber", 0.0);
+        double iceTombProb = plugin.getConfig().getDouble(configPath + ".ice_tomb", 0.0);
+        double shadowVaultProb = plugin.getConfig().getDouble(configPath + ".shadow_vault", 0.0);
+        double toxicLabProb = plugin.getConfig().getDouble(configPath + ".toxic_lab", 0.0);
+
+        // Weighted random selection
+        double rand = random.nextDouble();
+        double total = 0;
+
+        if ((total += crystalCavernProb) > rand) return DungeonType.CRYSTAL_CAVERN;
+        if ((total += lavaChamberProb) > rand) return DungeonType.LAVA_CHAMBER;
+        if ((total += iceTombProb) > rand) return DungeonType.ICE_TOMB;
+        if ((total += shadowVaultProb) > rand) return DungeonType.SHADOW_VAULT;
+        if ((total += toxicLabProb) > rand) return DungeonType.TOXIC_LAB;
+
+        // Fallback - default dungeon type
+        return DungeonType.CRYSTAL_CAVERN;
     }
 
     public enum DungeonType {

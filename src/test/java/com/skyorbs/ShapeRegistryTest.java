@@ -20,7 +20,7 @@ public class ShapeRegistryTest {
     @Test
     public void testShapeRegistryInitialization() {
         assertNotNull(shapeRegistry);
-        assertEquals(28, shapeRegistry.getShapeCount()); // Updated: 18 original + 10 new shapes
+        assertEquals(33, shapeRegistry.getShapeCount()); // Updated: 18 original + 15 new shapes
     }
 
     @Test

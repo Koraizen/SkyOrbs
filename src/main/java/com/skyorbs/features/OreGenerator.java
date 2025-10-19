@@ -4,6 +4,7 @@ import com.skyorbs.SkyOrbs;
 import com.skyorbs.core.Orb;
 import com.skyorbs.core.PlanetType;
 import com.skyorbs.biomes.BiomeType;
+import com.skyorbs.utils.NoiseGenerator;
 import org.bukkit.Material;
 
 import java.util.*;
@@ -151,9 +152,10 @@ public class OreGenerator {
      * Try to generate ore at this position during planet generation
      * OPTIMIZED: Uses cached configs, depth filtering, and batch probability
      * ENHANCED: Includes stone variants for more variety
+     * REALISTIC: Very low ore spawn rates with noise-based distribution
      */
     public static Material tryGenerateOre(int x, int y, int z, double distanceFromCenter,
-                                           int radius, BiomeType biome, Random random) {
+                                            int radius, BiomeType biome, Random random) {
 
         // OPTIMIZATION 1: Early exit for surface blocks
         if (distanceFromCenter > radius - 2) return null;
@@ -170,11 +172,19 @@ public class OreGenerator {
         boolean enabled = (Boolean) config.getOrDefault("enabled", true);
         if (!enabled) return null;
 
-        double densityMultiplier = ((Number) config.getOrDefault("densityMultiplier", 0.001)).doubleValue();
+        double densityMultiplier = ((Number) config.getOrDefault("densityMultiplier", 0.000005)).doubleValue();
 
-        // STONE VARIANTS: High chance to return stone variants instead of ores
+        // NOISE-BASED DISTRIBUTION: Use 3D noise for realistic ore veins
+        double veinNoiseScale = ((Number) config.getOrDefault("veinNoiseScale", 0.02)).doubleValue();
+        double veinThreshold = ((Number) config.getOrDefault("veinThreshold", 0.7)).doubleValue();
+
+        // Generate noise value for this position (deterministic based on coordinates)
+        double noiseValue = (NoiseGenerator.simplexNoise3D(x * veinNoiseScale, y * veinNoiseScale, z * veinNoiseScale) + 1) / 2; // Normalize to 0-1
+        if (noiseValue < veinThreshold) return null; // Not in a vein
+
+        // STONE VARIANTS: Chance to return stone variants instead of ores (PLANET TYPE BASED)
         boolean stoneVariantsEnabled = (Boolean) config.getOrDefault("stoneVariants", true);
-        if (stoneVariantsEnabled && random.nextDouble() < 0.99) { // %99 taş variantı
+        if (stoneVariantsEnabled && random.nextDouble() < 0.7) { // %70 taş variantı - dengeli dağılım
             return getStoneVariant(biome, random);
         }
 
@@ -207,7 +217,7 @@ public class OreGenerator {
 
                 // Rare ores more common in core
                 if (isRareOre(oreName) && depthRatio < 0.2) {
-                    chance *= 5.0;
+                    chance *= 2.0;
                 }
 
                 if (chance > 0) {
@@ -242,46 +252,42 @@ public class OreGenerator {
     }
     
     /**
-     * Calculate core multiplier based on depth
+     * Calculate core multiplier based on depth - OVERWORLD STYLE
+     * Similar to Minecraft's natural ore distribution
      */
     private static double calculateCoreMultiplier(double depthRatio) {
-        if (depthRatio < 0.2) {
-            // Core region (central 20%) - very rare but valuable
-            return 0.1;
-        } else if (depthRatio < 0.4) {
-            // Near core - moderately rare
-            return 0.3;
-        } else if (depthRatio < 0.7) {
-            // Mid-depth - normal density
-            return 1.0;
+        if (depthRatio < 0.1) {
+            // Very deep core - rare ores
+            return 0.5; // Low chance
+        } else if (depthRatio < 0.3) {
+            // Deep areas - valuable ores
+            return 0.8; // Moderate chance
+        } else if (depthRatio < 0.6) {
+            // Mid-depth - balanced
+            return 1.2; // Good chance
         } else {
-            // Near surface - higher density
-            return 1.5;
+            // Near surface - common ores
+            return 1.5; // High chance
         }
     }
     
     /**
-     * Get config key for planet type (handles special cases)
+     * Get config key for planet type - PLANET TYPE BASED: Use planet type with biome variations
      */
     private static String getConfigKeyForPlanetType(PlanetType planetType, BiomeType biome) {
-        // Special handling for desert biomes (use specific config)
-        if (biome == BiomeType.DESERT || biome == BiomeType.BADLANDS || biome == BiomeType.CANYON) {
-            return biome.name().toLowerCase();
-        }
-        
         // Special handling for specific biomes with unique ore profiles
         if (biome == BiomeType.CRYSTAL_FOREST || biome == BiomeType.CRYSTALLINE) {
             return biome.name().toLowerCase();
         }
-        
+
         if (biome == BiomeType.LAVA_OCEAN || biome == BiomeType.MAGMA_CAVES) {
             return biome.name().toLowerCase();
         }
-        
+
         if (biome == BiomeType.FROZEN_TUNDRA || biome == BiomeType.GLACIER) {
             return biome.name().toLowerCase();
         }
-        
+
         // Fallback to planet type
         return planetType.name().toLowerCase();
     }
@@ -297,30 +303,31 @@ public class OreGenerator {
     }
 
     /**
-     * OPTIMIZATION 2: Check if ore can spawn at given depth
-     * Prevents checking ores that only spawn in specific depth ranges
+     * OVERWORLD STYLE DEPTH DISTRIBUTION: Similar to Minecraft's ore levels
      */
     private static boolean canOreSpawnAtDepth(String oreName, double depthRatio) {
         return switch (oreName.toUpperCase()) {
-            // Surface ores (near surface)
-            case "COAL", "IRON", "COPPER", "GOLD", "REDSTONE", "LAPIS" -> depthRatio > 0.1;
-            // Mid-depth ores
-            case "DIAMOND", "EMERALD", "AMETHYST" -> depthRatio > 0.05 && depthRatio < 0.9;
-            // Deep/core ores
-            case "ANCIENT_DEBRIS", "NETHERITE" -> depthRatio < 0.3;
-            // Nether ores (special biomes)
+            // Surface ores (near surface - most common)
+            case "COAL", "IRON", "COPPER" -> depthRatio > 0.3; // Near surface
+            // Mid-depth ores (balanced)
+            case "GOLD", "REDSTONE", "LAPIS" -> depthRatio > 0.1 && depthRatio < 0.7;
+            // Deep ores (rare and valuable)
+            case "DIAMOND", "EMERALD" -> depthRatio < 0.5; // Deeper areas
+            // Very deep/core ores (extremely rare)
+            case "ANCIENT_DEBRIS", "NETHERITE" -> depthRatio < 0.3; // Very deep
+            // Nether ores (special biomes only)
             case "NETHER_QUARTZ", "NETHER_GOLD" -> true; // Always available in nether biomes
-            // Special ores
-            case "GLOWSTONE", "OBSIDIAN", "SLIME", "PRISMARINE", "NETHERRACK" -> true;
+            // Special ores (biome-specific)
+            case "GLOWSTONE", "OBSIDIAN", "SLIME", "PRISMARINE", "NETHERRACK", "AMETHYST" -> true;
             default -> true;
         };
     }
 
     /**
-     * Get a stone variant based on biome type
+     * Get a stone variant based on biome type - PLANET TYPE BASED
      */
     private static Material getStoneVariant(BiomeType biome, Random random) {
-        // Biome-specific stone variants
+        // Planet type based stone variants - aesthetic and thematic
         Material[] biomeStones = switch (biome) {
             case LAVA_OCEAN, MAGMA_CAVES, BASALTIC -> new Material[]{
                 Material.NETHERRACK, Material.BLACKSTONE, Material.BASALT, Material.POLISHED_BASALT,

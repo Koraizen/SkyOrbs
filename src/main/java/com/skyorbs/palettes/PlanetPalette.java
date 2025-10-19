@@ -8,7 +8,7 @@ import java.util.Random;
  * Enables 2000+ planet combinations through modular palette system
  */
 public class PlanetPalette {
-    
+
     private final String id;
     private final String displayName;
     private final Material[] surfaceBlocks;
@@ -60,6 +60,36 @@ public class PlanetPalette {
         } else {
             // Core layer (5+ blocks deep)
             return coreBlocks[random.nextInt(coreBlocks.length)];
+        }
+    }
+
+    /**
+     * Get material based on depth and regional noise for coherent regions
+     * @param depth 0 = surface, higher = deeper
+     * @param noiseValue Noise value between 0-1 for regional coherence
+     * @param random Random for variation
+     * @return Material for this depth and region
+     */
+    public Material getMaterialByDepthAndNoise(int depth, double noiseValue, Random random) {
+        // Use noise to select consistent materials within regions
+        int surfaceIndex = (int)(noiseValue * surfaceBlocks.length);
+        int subsurfaceIndex = (int)(noiseValue * subsurfaceBlocks.length);
+        int coreIndex = (int)(noiseValue * coreBlocks.length);
+
+        // Ensure indices are within bounds
+        surfaceIndex = Math.min(surfaceIndex, surfaceBlocks.length - 1);
+        subsurfaceIndex = Math.min(subsurfaceIndex, subsurfaceBlocks.length - 1);
+        coreIndex = Math.min(coreIndex, coreBlocks.length - 1);
+
+        if (depth == 0) {
+            // Surface layer - use noise for regional consistency
+            return surfaceBlocks[surfaceIndex];
+        } else if (depth < 5) {
+            // Subsurface layer (0-5 blocks deep) - use noise for regional consistency
+            return subsurfaceBlocks[subsurfaceIndex];
+        } else {
+            // Core layer (5+ blocks deep) - use noise for regional consistency
+            return coreBlocks[coreIndex];
         }
     }
     

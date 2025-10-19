@@ -6,7 +6,7 @@ package com.skyorbs.modifiers;
  */
 public enum PlanetModifier {
     
-    HOLLOW("Hollow", "İçi Boş", 0.4),           // Empty interior with shell
+    HOLLOW("Hollow", "İçi Boş", 0.1),           // Empty interior with shell
     ORE_RICH("Ore Rich", "Maden Zengin", 0.3),   // 2x ore density
     MAGMA_CORE("Magma Core", "Magma Çekirdek", 0.2),  // Hot glowing core
     ICY_CORE("Icy Core", "Buz Çekirdek", 0.15),       // Frozen core

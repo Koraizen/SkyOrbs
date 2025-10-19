@@ -8,16 +8,75 @@
 # ========================================
 generation:
   planetSize:
-    minRadius: 25
-    maxRadius: 50
-    averageRadius: 35
-    randomVariation: 5  # ±5 blok rastgele varyasyon
+    # TAMAMEN RASTGELE BOYUTLAR - Çok küçük ve çok büyük gezegenler dahil
+    enabled: true
+    minRadius: 5                    # Minimum yarıçap (çok küçük gezegenler için)
+    maxRadius: 250                  # Maximum yarıçap (çok büyük gezegenler için)
+
+    # Boyut dağılımı olasılıkları (%)
+    sizeDistribution:
+      tiny: 0.05                    # 5-15 yarıçap (%5 şans)
+      small: 0.10                   # 15-50 yarıçap (%10 şans)
+      medium: 0.20                  # 50-120 yarıçap (%20 şans)
+      large: 0.30                   # 120-200 yarıçap (%30 şans)
+      huge: 0.35                    # 200+ yarıçap (%35 şans)
+
+    # Boyut aralıkları (blok cinsinden)
+    sizeRanges:
+      tiny:
+        min: 5
+        max: 15
+      small:
+        min: 15
+        max: 50
+      medium:
+        min: 50
+        max: 120
+      large:
+        min: 120
+        max: 200
+      huge:
+        min: 200
+        max: 250
+
+    # Güvenlik limitleri
+    worldHeightLimit: 320           # Minecraft dünya yüksekliği limiti
+    safeBuffer: 20                  # Güvenlik buffer (blok)
 
   # ========================================
   # ŞEKİL AĞIRLIKLARI (28 Farklı Şekil!)
   # Yüksek değer = Daha sık görünür
   # ========================================
   shapes:
+    # SHAPE ALGORİTMA AYARLARI - Her şekil için özelleştirilebilir parametreler
+    enabled: true
+    algorithmTweaks:
+      star:
+        points: 5              # Yıldız kolu sayısı
+        innerRadius: 0.4       # İç yarıçap çarpanı
+        outerRadius: 1.0       # Dış yarıçap çarpanı
+        heightFactor: 0.6      # Yükseklik çarpanı
+        centerSolid: true      # Merkez dolu olsun mu?
+      rainbow:
+        arcAngle: 120          # Yay açısı (derece)
+        innerRadius: 0.4       # İç yarıçap çarpanı
+        outerRadius: 0.9       # Dış yarıçap çarpanı
+        thickness: 0.15        # Kalınlık
+        heightVariation: 0.4   # Yükseklik değişimi
+      butterfly:
+        wingSegments: 3        # Kanat segment sayısı
+        bodyThickness: 0.15    # Gövde kalınlığı
+        wingFactor: 0.6        # Kanat çarpanı
+        symmetry: true         # Simetrik olsun mu?
+      moon:
+        craterCount: 8         # Krater sayısı
+        craterDepth: 0.3       # Krater derinliği çarpanı
+        surfaceVariation: 0.2  # Yüzey değişimi
+        flatTop: true          # Üst kısım düz olsun mu?
+      diamond:
+        octahedronFactor: 0.3  # Octahedron çarpanı
+        symmetry: true         # Simetrik olsun mu?
+
     weights:
       # Temel Şekiller (10)
       SPHERE: 5.0           # Küre - Klasik gezegen
@@ -30,7 +89,7 @@ generation:
       CYLINDER: 5.0         # Silindir
       CONE: 6.0             # Koni
       DIAMOND: 5.0          # Elmas şekli
-      
+
       # Gelişmiş Şekiller (8)
       CUBE: 4.0             # Küp
       PYRAMID: 4.0          # Piramit
@@ -40,7 +99,7 @@ generation:
       COMET: 3.0            # Kuyruklu yıldız
       CRESCENT: 4.0         # Hilal
       HYBRID: 2.0           # Hibrit (karışık)
-      
+
       # YENİ Şekiller (10) - ÇEŞİTLİLİK İÇİN!
       LAYERED: 7.0          # Katmanlı gezegen
       CRATERED: 8.0         # Kraterli yüzey
@@ -53,6 +112,13 @@ generation:
       NEBULA: 4.0           # Nebula bulutu
       ASTEROID_FIELD: 6.0   # Asteroid kümesi
 
+      # ÖZEL ŞEKİLLER - Config ile kontrol edilebilir
+      STAR: 4.0             # Yıldız şekli
+      MOON: 6.0             # Ay şekli
+      RAINBOW: 3.0          # Gökkuşağı şekli
+      BUTTERFLY: 2.0        # Kelebek şekli
+      HEART: 1.0            # Kalp şekli
+
 # ========================================
 # MADEN (ORE) SİSTEMİ - TAM KONTROL
 # Her biyom için özel ore profilleri!
@@ -60,225 +126,211 @@ generation:
 features:
   ores:
     enabled: true
-    densityMultiplier: 0.0005        # Genel maden yoğunluğu (1.0 = normal, 2.0 = 2x daha fazla) - %0.05 şans
-    deepslateVariants: true       # Derinlerde deepslate varyantları
-    biomeBonuses: true            # Biyoma özel bonus madenler
-    hollowPlanetSpawn: false      # İçi boş gezegenlerde kabukta spawn
-    stoneVariants: true           # Çeşitli taş blokları ekle
+    densityMultiplier: 0.05          # Genel maden yoğunluğu - DENGELİ DAĞILIM (%5 şans)
+    deepslateVariants: true          # Derinlerde deepslate varyantları
+    biomeBonuses: true               # Gezegen tipine özel bonus madenler
+    hollowPlanetSpawn: false         # İçi boş gezegenlerde kabukta spawn
+    stoneVariants: true              # Çeşitli taş blokları ekle - GEZEGEN TİPİNE GÖRE
+    veinNoiseScale: 0.03             # Maden damarı gürültü ölçeği (büyük damarlar)
+    veinThreshold: 0.6               # Maden damarı eşiği (daha nadir damarlar)
 
     # ========================================
     # BİYOMA ÖZEL ORE PROFİLLERİ
     # Her biyom kendi ore dağılımına sahip!
     # ========================================
     planetTypes:
-      # TERRESTRIAL - Full ore set
+      # TERRESTRIAL - Full ore set (dengeli oranlar)
       terrestrial:
         enabled: true
         densityMultiplier: 1.0
         ores:
           coal:
             enabled: true
-            chance: 0.35
-            minVein: 3
-            maxVein: 8
-          iron:
-            enabled: true
-            chance: 0.30
-            minVein: 2
-            maxVein: 6
-          copper:
-            enabled: true
-            chance: 0.25
-            minVein: 3
-            maxVein: 9
-          gold:
-            enabled: true
-            chance: 0.12
+            chance: 0.08     # %8 şans (yaygın)
             minVein: 2
             maxVein: 5
-          redstone:
+          iron:
             enabled: true
-            chance: 0.10
-            minVein: 3
-            maxVein: 7
-          lapis:
-            enabled: true
-            chance: 0.08
-            minVein: 2
-            maxVein: 6
-          diamond:
-            enabled: true
-            chance: 0.04
+            chance: 0.06     # %6 şans
             minVein: 1
             maxVein: 4
-          emerald:
+          copper:
             enabled: true
-            chance: 0.02
+            chance: 0.05     # %5 şans
+            minVein: 2
+            maxVein: 6
+          gold:
+            enabled: true
+            chance: 0.02     # %2 şans (nadir)
+            minVein: 1
+            maxVein: 3
+          redstone:
+            enabled: true
+            chance: 0.015    # %1.5 şans
+            minVein: 2
+            maxVein: 4
+          lapis:
+            enabled: true
+            chance: 0.012    # %1.2 şans
+            minVein: 1
+            maxVein: 3
+          diamond:
+            enabled: true
+            chance: 0.005    # %0.5 şans (değerli)
             minVein: 1
             maxVein: 2
+          emerald:
+            enabled: true
+            chance: 0.003    # %0.3 şans (efsanevi)
+            minVein: 1
+            maxVein: 1
       
-      # LAVA - Only nether ores and gold
+      # LAVA - Only nether ores and gold (dengeli)
       lava:
         enabled: true
         densityMultiplier: 0.8
         ores:
           ancient_debris:
             enabled: true
-            chance: 0.08
+            chance: 0.008    # %0.8 şans (nadir ama bulunabilir)
             minVein: 1
-            maxVein: 3
+            maxVein: 2
           gold:
             enabled: true
-            chance: 0.30
-            minVein: 3
-            maxVein: 8
+            chance: 0.04     # %4 şans
+            minVein: 2
+            maxVein: 5
           nether_quartz:
             enabled: true
-            chance: 0.25
-            minVein: 3
-            maxVein: 7
+            chance: 0.06     # %6 şans
+            minVein: 2
+            maxVein: 6
           nether_gold:
             enabled: true
-            chance: 0.20
-            minVein: 3
-            maxVein: 7
+            chance: 0.03     # %3 şans
+            minVein: 2
+            maxVein: 4
       
-      # CRYSTAL - Gems only
+      # CRYSTAL - Gems only (dengeli değerli madenler)
       crystal:
         enabled: true
         densityMultiplier: 1.3
         ores:
           diamond:
             enabled: true
-            chance: 0.15
-            minVein: 2
-            maxVein: 6
+            chance: 0.02     # %2 şans
+            minVein: 1
+            maxVein: 3
           emerald:
             enabled: true
-            chance: 0.12
-            minVein: 2
-            maxVein: 5
+            chance: 0.015    # %1.5 şans
+            minVein: 1
+            maxVein: 2
           amethyst:
             enabled: true
-            chance: 0.40
-            minVein: 3
-            maxVein: 10
+            chance: 0.08     # %8 şans (kristal gezegeninde yaygın)
+            minVein: 2
+            maxVein: 6
           lapis:
             enabled: true
-            chance: 0.15
-            minVein: 3
-            maxVein: 7
+            chance: 0.03     # %3 şans
+            minVein: 2
+            maxVein: 4
       
-      # ICE - Diamonds and iron
+      # ICE - Diamonds and iron (soğuk gezegen madenleri)
       ice:
         enabled: true
         densityMultiplier: 1.1
         ores:
           diamond:
             enabled: true
-            chance: 0.12
-            minVein: 2
-            maxVein: 5
+            chance: 0.025    # %2.5 şans (soğuk gezegenlerde değerli maden)
+            minVein: 1
+            maxVein: 3
           iron:
             enabled: true
-            chance: 0.35
-            minVein: 3
-            maxVein: 7
+            chance: 0.05     # %5 şans
+            minVein: 2
+            maxVein: 4
           lapis:
             enabled: true
-            chance: 0.20
-            minVein: 3
-            maxVein: 8
+            chance: 0.04     # %4 şans
+            minVein: 2
+            maxVein: 5
           coal:
             enabled: true
-            chance: 0.30
-            minVein: 3
-            maxVein: 8
+            chance: 0.07     # %7 şans (soğuk gezegenlerde yaygın)
+            minVein: 2
+            maxVein: 5
       
-      # SHADOW - Almost no ores (dead planet)
+      # SHADOW - Almost no ores (dead planet) - nadir ama bulunabilir
       shadow:
         enabled: true
         densityMultiplier: 0.3
         ores:
           obsidian:
             enabled: true
-            chance: 0.25
-            minVein: 2
-            maxVein: 5
-          coal:
-            enabled: true
-            chance: 0.10
-            minVein: 1
-            maxVein: 3
-          iron:
-            enabled: true
-            chance: 0.05
+            chance: 0.015    # %1.5 şans
             minVein: 1
             maxVein: 2
+          coal:
+            enabled: true
+            chance: 0.008    # %0.8 şans
+            minVein: 1
+            maxVein: 2
+          iron:
+            enabled: true
+            chance: 0.003    # %0.3 şans (nadir)
+            minVein: 1
+            maxVein: 1
       
-      # TOXIC - Slime and glowstone
+      # TOXIC - Slime and glowstone (zehirli gezegen madenleri)
       toxic:
         enabled: true
         densityMultiplier: 0.7
         ores:
           slime:
             enabled: true
-            chance: 0.50
-            minVein: 3
-            maxVein: 8
+            chance: 0.06     # %6 şans (toksisite temalı)
+            minVein: 2
+            maxVein: 5
           glowstone:
             enabled: true
-            chance: 0.30
-            minVein: 2
-            maxVein: 6
+            chance: 0.04     # %4 şans
+            minVein: 1
+            maxVein: 3
           copper:
             enabled: true
-            chance: 0.20
-            minVein: 2
-            maxVein: 5
+            chance: 0.03     # %3 şans
+            minVein: 1
+            maxVein: 3
           iron:
             enabled: true
-            chance: 0.15
-            minVein: 2
-            maxVein: 5
+            chance: 0.025    # %2.5 şans
+            minVein: 1
+            maxVein: 2
 
     # ========================================
-    # BİYOMA ÖZEL MADEN BONUSLARI
+    # GEZEGEN TİPİNE ÖZEL MADEN BONUSLARI
     # ========================================
     biomeBonuses:
-      LAVA_OCEAN:
-        - type: ANCIENT_DEBRIS
-          chanceMultiplier: 3.0
-          veinSizeBonus: 2
-      
-      MAGMA_CAVES:
-        - type: GOLD_ORE
-          chanceMultiplier: 2.5
-          veinSizeBonus: 3
-      
       CRYSTAL_FOREST:
         - type: DIAMOND_ORE
-          chanceMultiplier: 2.0
-          veinSizeBonus: 2
-        - type: EMERALD_ORE
           chanceMultiplier: 1.5
           veinSizeBonus: 1
-      
+        - type: EMERALD_ORE
+          chanceMultiplier: 1.3
+          veinSizeBonus: 1
+
+      LAVA_OCEAN:
+        - type: ANCIENT_DEBRIS
+          chanceMultiplier: 2.0
+          veinSizeBonus: 1
+
       FROZEN_TUNDRA:
         - type: DIAMOND_ORE
-          chanceMultiplier: 1.8
+          chanceMultiplier: 1.4
           veinSizeBonus: 1
-        - type: LAPIS_ORE
-          chanceMultiplier: 2.0
-          veinSizeBonus: 3
-      
-      BADLANDS:
-        - type: GOLD_ORE
-          chanceMultiplier: 3.0
-          veinSizeBonus: 4
-        - type: COPPER_ORE
-          chanceMultiplier: 2.0
-          veinSizeBonus: 3
 
   # ========================================
   # AĞAÇ SİSTEMİ - TAM KONTROL
@@ -522,73 +574,69 @@ features:
         probability: 0.50         # %50 şans
         items:
           - type: IRON_INGOT
-            amount: [5, 12]
+            amount: [3, 8]         # Azaltıldı
           - type: GOLD_INGOT
-            amount: [2, 6]
+            amount: [1, 4]         # Azaltıldı
           - type: COAL
-            amount: [8, 20]
+            amount: [5, 12]        # Azaltıldı
           - type: BREAD
-            amount: [3, 8]
+            amount: [2, 5]         # Azaltıldı
           - type: IRON_SWORD
-            chance: 0.50
+            chance: 0.30           # Şans azaltıldı
       
       UNCOMMON:
         probability: 0.28         # %28 şans
         items:
           - type: GOLD_INGOT
-            amount: [6, 12]
+            amount: [4, 8]         # Azaltıldı
           - type: DIAMOND
-            amount: [1, 4]
+            amount: [1, 2]         # Azaltıldı
           - type: EMERALD
-            amount: [1, 3]
-            chance: 0.70
+            amount: [1, 1]         # Azaltıldı
+            chance: 0.50           # Şans azaltıldı
           - type: ENCHANTED_BOOK
             amount: [1, 1]
           - type: GOLDEN_APPLE
-            amount: [1, 3]
-            chance: 0.50
+            amount: [1, 1]         # Azaltıldı
+            chance: 0.30           # Şans azaltıldı
       
       RARE:
         probability: 0.15         # %15 şans
         items:
           - type: DIAMOND
-            amount: [4, 8]
+            amount: [2, 4]         # Azaltıldı
           - type: EMERALD
-            amount: [3, 6]
+            amount: [1, 3]         # Azaltıldı
           - type: NETHERITE_SCRAP
-            amount: [1, 2]
-            chance: 0.60
+            amount: [1, 1]         # Azaltıldı
+            chance: 0.40           # Şans azaltıldı
           - type: GOLDEN_APPLE
-            amount: [2, 4]
+            amount: [1, 2]         # Azaltıldı
           - type: ENCHANTED_BOOK
-            amount: [1, 2]
+            amount: [1, 1]         # Azaltıldı
       
       EPIC:
         probability: 0.06         # %6 şans
         items:
           - type: DIAMOND
-            amount: [8, 15]
+            amount: [4, 8]         # Azaltıldı
           - type: EMERALD
-            amount: [6, 12]
-          - type: NETHERITE_INGOT
-            amount: [1, 3]
+            amount: [3, 6]         # Azaltıldı
+          - type: NETHERITE_SCRAP
+            amount: [2, 4]         # Scrap olarak değiştirildi
           - type: ENCHANTED_GOLDEN_APPLE
-            amount: [1, 2]
-            chance: 0.60
+            amount: [1, 1]         # Azaltıldı
+            chance: 0.40           # Şans azaltıldı
           - type: ENCHANTED_BOOK
-            amount: [2, 3]
+            amount: [1, 2]         # Azaltıldı
       
       LEGENDARY:
         probability: 0.01         # %1 şans (çok nadir!)
         items:
-          - type: DIAMOND_BLOCK
-            amount: [3, 6]
-          - type: EMERALD_BLOCK
-            amount: [2, 4]
           - type: NETHERITE_INGOT
-            amount: [3, 6]
+            amount: [1, 2]        # Sadece ingot - block değil
           - type: ENCHANTED_GOLDEN_APPLE
-            amount: [3, 5]
+            amount: [1, 2]        # Azaltıldı
           - type: TOTEM_OF_UNDYING
             amount: [1, 1]
           - type: ELYTRA
@@ -596,35 +644,35 @@ features:
           - type: TRIDENT
             amount: [1, 1]
           - type: ENCHANTED_BOOK
-            amount: [3, 5]
+            amount: [2, 3]        # Azaltıldı
     
     # ========================================
-    # BİYOMA ÖZEL HAZİNE BONUSLARI
+    # GEZEGEN TİPİNE ÖZEL HAZİNE BONUSLARI - DENGELİ TUTULDU
     # ========================================
     biomeBonuses:
       CRYSTAL_FOREST:
-        legendaryMultiplier: 3.0  # 3x daha fazla efsanevi şans
+        legendaryMultiplier: 1.5  # Hafif artış
         extraItems:
           - type: AMETHYST_SHARD
-            amount: [10, 20]
+            amount: [5, 10]        # Azaltıldı
           - type: DIAMOND
-            amount: [5, 10]
-      
+            amount: [1, 3]         # Azaltıldı
+
       LAVA_OCEAN:
-        legendaryMultiplier: 2.5
+        legendaryMultiplier: 1.3  # Hafif artış
         extraItems:
           - type: ANCIENT_DEBRIS
-            amount: [2, 5]
+            amount: [1, 2]         # Azaltıldı
           - type: NETHERITE_SCRAP
-            amount: [3, 6]
-      
+            amount: [1, 3]         # Azaltıldı
+
       FROZEN_TUNDRA:
-        legendaryMultiplier: 2.0
+        legendaryMultiplier: 1.2  # Hafif artış
         extraItems:
           - type: BLUE_ICE
-            amount: [5, 10]
+            amount: [3, 6]         # Azaltıldı
           - type: DIAMOND
-            amount: [3, 6]
+            amount: [1, 2]         # Azaltıldı
 
   # ========================================
   # ZİNDAN SİSTEMİ
@@ -739,7 +787,7 @@ modifiers:
   # ========================================
   hollow:
     enabled: true
-    probability: 0.35             # %35 şans
+    probability: 0.15             # %15 şans
     shellThickness: 5             # Kabuk kalınlığı (blok)
     innerRadiusRatio: 0.6         # İç yarıçap oranı (0.6 = %60 boş)
     tunnelCount: [2, 5]           # Tünel sayısı [min, max]
@@ -973,10 +1021,31 @@ asteroids:
 # İLERLEME GÖSTERGESI
 # ========================================
 progressDisplay:
-  type: chat                      # bossbar, actionbar, chat (chat daha stabil ve detaylı)
-  updateInterval: 1000            # ms cinsinden güncelleme aralığı (chat için 1 saniye)
-  showPercentage: true
-  showStepName: true
+  type: bossbar                   # bossbar, actionbar, chat (bossbar daha görsel)
+  updateInterval: 500             # ms cinsinden güncelleme aralığı
+
+  # BOSSBAR AYARLARI - Tamamen özelleştirilebilir
+  bossbar:
+    enabled: true
+    color: YELLOW                 # RED, BLUE, GREEN, YELLOW, PURPLE, WHITE
+    style: SEGMENTED_20           # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    titleFormat: "§6🌍 Gezegen Oluşturuluyor... §e{percent}% §7({step})"
+    showStepName: true
+    showPercentage: true
+    updateTitle: true             # Başlığı güncelle
+    updateProgress: true          # Progress'i güncelle
+
+  # CHAT AYARLARI
+  chat:
+    enabled: false                # Chat mesajları aktif mi?
+    showProgressBar: true         # Görsel progress bar göster
+    showStepDetails: true         # Adım detayları göster
+    messageFormat: "§e{step} §7({current}/{total})"
+
+  # ACTIONBAR AYARLARI
+  actionbar:
+    enabled: false                # Actionbar aktif mi?
+    format: "§e🌍 Gezegen: {percent}% - {step}"
   
   colors:
     low: RED                      # 0-33%
@@ -1091,8 +1160,8 @@ placement:
   worldBounds:
     centerX: 0
     centerZ: 0
-    maxDistance: 10000            # Spawn'dan maximum mesafe
-    minDistanceFromSpawn: 2000    # Spawn'dan minimum mesafe
+    maxDistance: 50000            # Spawn'dan maximum mesafe - ARTIRILDI
+    minDistanceFromSpawn: 1000    # Spawn'dan minimum mesafe - AZALTILDI
   
   worldHeight:
     respectLimits: true           # Dünya yükseklik limitlerini respektle
@@ -1214,3 +1283,77 @@ messages:
   infoModifiers: "&aModifierler: &e{modifiers}"
   infoCoordinates: "&aKoordinatlar: &eX:{x} Y:{y} Z:{z}"
   infoCreated: "&aOluşturulma: &e{date}"
+
+# ========================================
+# YAPI (BUILD) SİSTEMİ - Gezegen tiplerine göre yapılar
+# ========================================
+buildings:
+ enabled: true
+ densityMultiplier: 0.02        # Genel yapı yoğunluğu çarpanı
+
+ # Gezegen tiplerine göre yapı konfigürasyonları
+ planetTypes:
+   terrestrial:
+     enabled: true
+     densityMultiplier: 1.0
+     structures:
+       village: 0.4             # Köy evleri (%40)
+       castle: 0.1              # Kaleler (%10)
+       temple: 0.2              # Tapınaklar (%20)
+       ruins: 0.3               # Harabeler (%30)
+
+   crystal:
+     enabled: true
+     densityMultiplier: 1.5
+     structures:
+       crystal_tower: 0.5       # Kristal kuleleri (%50)
+       arcane_library: 0.3      # Büyü kütüphaneleri (%30)
+       crystal_palace: 0.2      # Kristal saraylar (%20)
+
+   lava:
+     enabled: true
+     densityMultiplier: 0.8
+     structures:
+       fortress: 0.6            # Kaleler (%60)
+       lava_temple: 0.4         # Lava tapınakları (%40)
+
+   ice:
+     enabled: true
+     densityMultiplier: 1.2
+     structures:
+       ice_palace: 0.4          # Buz sarayları (%40)
+       igloo_village: 0.6       # İglo köyleri (%60)
+
+   shadow:
+     enabled: true
+     densityMultiplier: 0.7
+     structures:
+       dark_tower: 0.5          # Karanlık kuleler (%50)
+       shadow_temple: 0.5       # Gölge tapınakları (%50)
+
+   toxic:
+     enabled: true
+     densityMultiplier: 0.9
+     structures:
+       lab: 0.7                 # Laboratuvarlar (%70)
+       quarantine_zone: 0.3     # Karantina bölgeleri (%30)
+
+ # Yapı boyut ayarları
+ sizeSettings:
+   small: {minBlocks: 50, maxBlocks: 200}
+   medium: {minBlocks: 200, maxBlocks: 500}
+   large: {minBlocks: 500, maxBlocks: 1000}
+   huge: {minBlocks: 1000, maxBlocks: 2000}
+
+ # Yapı malzemeleri - biyoma göre
+ materials:
+   village:
+     wood: [OAK_PLANKS, OAK_LOG, OAK_STAIRS]
+     stone: [STONE_BRICKS, COBBLESTONE, STONE]
+   castle:
+     stone: [STONE_BRICKS, CRACKED_STONE_BRICKS, MOSSY_STONE_BRICKS]
+     decoration: [TORCH, LANTERN, IRON_BARS]
+   temple:
+     stone: [QUARTZ_BLOCK, QUARTZ_PILLAR, QUARTZ_STAIRS]
+     decoration: [GOLD_BLOCK, ENCHANTING_TABLE, BOOKSHELF]
+

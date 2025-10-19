@@ -34,7 +34,7 @@ public class ConfigManager {
     // ============================================
     
     public int getMaxDistance() {
-        return plugin.getConfig().getInt("placement.worldBounds.maxDistance", 3000);
+        return plugin.getConfig().getInt("placement.worldBounds.maxDistance", 50000);
     }
     
     public int getCenterX() {

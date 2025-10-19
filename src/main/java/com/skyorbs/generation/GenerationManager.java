@@ -35,10 +35,14 @@ public class GenerationManager {
     }
     
     public void createPlanetAsync(World world, Player player) {
-        createPlanetAsync(world, player, plugin.getConfigManager().generateRandomName());
+        createPlanetAsync(world, player, plugin.getConfigManager().generateRandomName(), null);
     }
-    
-    public void createPlanetAsync(World world, Player player, String name) {
+
+    public void createPlanetAsync(World world, Player player, String shapeName) {
+        createPlanetAsync(world, player, plugin.getConfigManager().generateRandomName(), shapeName);
+    }
+
+    public void createPlanetAsync(World world, Player player, String name, String forcedShape) {
         player.sendMessage("§eGezegen oluşturuluyor...");
 
         executor.submit(() -> {
@@ -61,9 +65,22 @@ public class GenerationManager {
                 long seed = System.currentTimeMillis();
                 Random random = new Random(seed);
 
-                PlanetShape shape = plugin.getShapeRegistry().getRandomShape(
-                    plugin.getConfigManager().getShapeWeights()
-                );
+                PlanetShape shape;
+                if (forcedShape != null) {
+                    // FORCED SHAPE - Belirtilen şekli kullan
+                    shape = plugin.getShapeRegistry().getShape(forcedShape);
+                    if (shape == null) {
+                        // Fallback to random if forced shape not found
+                        shape = plugin.getShapeRegistry().getRandomShape(
+                            plugin.getConfigManager().getShapeWeights()
+                        );
+                    }
+                } else {
+                    // RANDOM SHAPE - Rastgele şekil seç
+                    shape = plugin.getShapeRegistry().getRandomShape(
+                        plugin.getConfigManager().getShapeWeights()
+                    );
+                }
 
                 BiomeType biome = BiomeType.getRandomBiomeWeighted(random);
                 
@@ -105,60 +122,89 @@ public class GenerationManager {
                 plugin.getAtmosphereManager().registerPlanetAtmosphere(orb.getId(), atmosphere);
 
                 // Calculate total steps dynamically
-                int totalSteps = 8; // Base steps
-                if (plugin.getConfigManager().isAsteroidsEnabled()) totalSteps += 2;
-                if (plugin.getConfigManager().isSatellitesEnabled()) totalSteps += 2;
-                if (plugin.getConfigManager().isTreeGenerationEnabled()) totalSteps += 1;
-                if (plugin.getConfigManager().isStructureGenerationEnabled()) totalSteps += 1;
-                if (plugin.getConfigManager().isTreasureGenerationEnabled()) totalSteps += 1;
+                int totalSteps = 9; // Base steps (shell, ore, trees, structures, treasures, dungeons, surface details, rings, finalization)
 
                 final int[] progress = {0};
                 final int finalTotalSteps = totalSteps;
 
-                // Progress display type from config
-                String progressType = plugin.getConfig().getString("progress_display.type", "chat");
+                // Progress display type from config - YENİ CONFIG SİSTEMİ
+                String progressType = plugin.getConfig().getString("progressDisplay.type", "bossbar");
 
-                // BossBar oluştur (if enabled)
+                // BossBar oluştur (config kontrollü)
                 final BossBar[] bossBarRef = new BossBar[1];
                 final String[] actionBarRef = {""};
                 final long[] lastUpdateTime = {0};
 
-                if ("bossbar".equals(progressType)) {
+                if ("bossbar".equals(progressType) && plugin.getConfig().getBoolean("progressDisplay.bossbar.enabled", true)) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        BossBar bossBar = Bukkit.createBossBar("§eGezegen Oluşturuluyor... §f0%", BarColor.BLUE, BarStyle.SEGMENTED_10);
+                        String colorStr = plugin.getConfig().getString("progressDisplay.bossbar.color", "YELLOW");
+                        String styleStr = plugin.getConfig().getString("progressDisplay.bossbar.style", "SEGMENTED_20");
+
+                        BarColor color = BarColor.valueOf(colorStr.toUpperCase());
+                        BarStyle style = BarStyle.valueOf(styleStr.toUpperCase());
+
+                        String titleFormat = plugin.getConfig().getString("progressDisplay.bossbar.titleFormat", "§6🌍 Gezegen Oluşturuluyor... §f0%");
+                        String initialTitle = titleFormat.replace("{percent}", "0").replace("{step}", "Başlatılıyor...");
+
+                        BossBar bossBar = Bukkit.createBossBar(initialTitle, color, style);
                         bossBar.addPlayer(player);
                         bossBar.setVisible(true);
                         bossBarRef[0] = bossBar;
+                        plugin.logInfo("BossBar created for player: " + player.getName());
                     });
                 }
 
                 Runnable sendProgress = () -> {
-                    int percent = (progress[0] * 100) / finalTotalSteps;
-                    double progressValue = (double) progress[0] / finalTotalSteps;
+                    int percent = Math.min(100, (progress[0] * 100) / finalTotalSteps);
+                    double progressValue = Math.min(1.0, (double) progress[0] / finalTotalSteps);
 
-                    // Rate limit updates to prevent spam (max 1 per second for chat)
+                    // Rate limit updates - config kontrollü
                     long currentTime = System.currentTimeMillis();
-                    if ("chat".equals(progressType) && currentTime - lastUpdateTime[0] < 1000) {
+                    int updateInterval = plugin.getConfig().getInt("progressDisplay.updateInterval", 500);
+                    if (currentTime - lastUpdateTime[0] < updateInterval) {
                         return; // Skip this update
                     }
                     lastUpdateTime[0] = currentTime;
 
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         String progressMsg = String.format("🌍 Gezegen Oluşturuluyor... %d%%", percent);
-
-                        // Create visual progress bar
                         String progressBar = createProgressBar(percent);
+                        String stepName = getStepName(progress[0], finalTotalSteps);
 
+                        // BOSSBAR - Config kontrollü
                         if ("bossbar".equals(progressType) && bossBarRef[0] != null) {
-                            bossBarRef[0].setProgress(Math.min(progressValue, 1.0));
-                            bossBarRef[0].setTitle(String.format("§eGezegen Oluşturuluyor... §f%d%%", percent));
-                        } else if ("actionbar".equals(progressType)) {
-                            player.sendActionBar(progressMsg + " " + progressBar);
-                        } else if ("chat".equals(progressType)) {
-                            // More detailed chat messages with step information and progress bar
-                            String stepName = getStepName(progress[0], finalTotalSteps);
-                            player.sendMessage(String.format("§e%s §7(%d/%d)", stepName, progress[0], finalTotalSteps));
-                            player.sendMessage(String.format("§b%s §f%d%% §7Tamamlandı", progressBar, percent));
+                            if (plugin.getConfig().getBoolean("progressDisplay.bossbar.updateProgress", true)) {
+                                bossBarRef[0].setProgress(progressValue);
+                            }
+                            if (plugin.getConfig().getBoolean("progressDisplay.bossbar.updateTitle", true)) {
+                                String titleFormat = plugin.getConfig().getString("progressDisplay.bossbar.titleFormat",
+                                    "§6🌍 Gezegen Oluşturuluyor... §e{percent}% §7({step})");
+                                String title = titleFormat.replace("{percent}", String.valueOf(percent))
+                                                         .replace("{step}", stepName);
+                                bossBarRef[0].setTitle(title);
+                            }
+                        }
+                        // ACTIONBAR - Config kontrollü
+                        else if ("actionbar".equals(progressType) && plugin.getConfig().getBoolean("progressDisplay.actionbar.enabled", false)) {
+                            String format = plugin.getConfig().getString("progressDisplay.actionbar.format",
+                                "§e🌍 Gezegen: {percent}% - {step}");
+                            String message = format.replace("{percent}", String.valueOf(percent))
+                                                 .replace("{step}", stepName);
+                            player.sendActionBar(message);
+                        }
+                        // CHAT - Config kontrollü
+                        else if ("chat".equals(progressType) && plugin.getConfig().getBoolean("progressDisplay.chat.enabled", false)) {
+                            if (plugin.getConfig().getBoolean("progressDisplay.chat.showStepDetails", true)) {
+                                String messageFormat = plugin.getConfig().getString("progressDisplay.chat.messageFormat",
+                                    "§e{step} §7({current}/{total})");
+                                String message = messageFormat.replace("{step}", stepName)
+                                                            .replace("{current}", String.valueOf(progress[0]))
+                                                            .replace("{total}", String.valueOf(finalTotalSteps));
+                                player.sendMessage(message);
+                            }
+                            if (plugin.getConfig().getBoolean("progressDisplay.chat.showProgressBar", true)) {
+                                player.sendMessage(String.format("§b%s §f%d%% §7Tamamlandı", progressBar, percent));
+                            }
                         }
                     });
                 };
@@ -417,7 +463,7 @@ public class GenerationManager {
      * SOLID PLANET - Tam dolu klasik gezegen (WITH INTEGRATED ORE GENERATION) - PERFORMANCE OPTIMIZED
      */
     private PlanetGenerationResult generateSolidPlanet(int cx, int cy, int cz,
-                                     int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
+                                      int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
 
         com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
         List<BlockPlacement> blocks = new ArrayList<>();
@@ -445,19 +491,22 @@ public class GenerationManager {
                         if (shape.isBlockPart(x, y, z, radius, seed)) {
                             double distance = Math.sqrt(distanceSquared); // Sadece gerektiğinde sqrt
                             int depth = (int)(radius - distance);
-                            Material material = palette.getMaterialByDepth(depth, random);
 
-                            // CORE SYSTEM: Special materials in center
-                            if (distanceSquared <= coreRadiusSquared) {
-                                material = generateCoreMaterial(depth, biome, random);
-                            } else {
-                                // CRITICAL FIX: Integrate ores during planet generation
-                                Material oreMaterial = OreGenerator.tryGenerateOre(
-                                    cx + x, cy + y, cz + z, distance, radius, biome, random
-                                );
-                                if (oreMaterial != null) {
-                                    material = oreMaterial;
-                                }
+                            // NEW: Use noise for coherent regional block selection
+                            double noiseValue = com.skyorbs.utils.NoiseGenerator.getNoise3D(
+                                (cx + x) * 0.01, (cy + y) * 0.01, (cz + z) * 0.01, seed
+                            );
+                            // Normalize noise to 0-1 range
+                            noiseValue = (noiseValue + 1.0) / 2.0;
+
+                            Material material = palette.getMaterialByDepthAndNoise(depth, noiseValue, random);
+
+                            // CRITICAL FIX: Integrate ores during planet generation
+                            Material oreMaterial = OreGenerator.tryGenerateOre(
+                                cx + x, cy + y, cz + z, distance, radius, biome, random
+                            );
+                            if (oreMaterial != null) {
+                                material = oreMaterial;
                             }
 
                             BlockPlacement block = new BlockPlacement(cx + x, cy + y, cz + z, material);
@@ -522,7 +571,7 @@ public class GenerationManager {
      * HOLLOW PLANET - NO ORES (only in shell if enabled) - PERFORMANCE OPTIMIZED
      */
     private PlanetGenerationResult generateHollowPlanet(int cx, int cy, int cz,
-                                      int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
+                                       int radius, long seed, PlanetShape shape, BiomeType biome, Random random) {
 
         int shellThickness = plugin.getConfig().getInt("modifiers.hollow.shellThickness", 5);
         com.skyorbs.palettes.PlanetPalette palette = plugin.getPaletteRegistry().getRandomPalette(random);
@@ -551,7 +600,15 @@ public class GenerationManager {
                         if (shape.isBlockPart(x, y, z, radius, seed)) {
                             double distance = Math.sqrt(distanceSquared);
                             int depth = (int)(radius - distance);
-                            Material material = palette.getMaterialByDepth(depth, random);
+
+                            // NEW: Use noise for coherent regional block selection
+                            double noiseValue = com.skyorbs.utils.NoiseGenerator.getNoise3D(
+                                (cx + x) * 0.01, (cy + y) * 0.01, (cz + z) * 0.01, seed
+                            );
+                            // Normalize noise to 0-1 range
+                            noiseValue = (noiseValue + 1.0) / 2.0;
+
+                            Material material = palette.getMaterialByDepthAndNoise(depth, noiseValue, random);
 
                             // OPTIONAL: Allow ores in hollow planet shells (CONFIG)
                             if (plugin.getConfig().getBoolean("features.ores.hollowPlanetSpawn", false)) {
